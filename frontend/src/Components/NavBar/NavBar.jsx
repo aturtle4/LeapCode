@@ -47,7 +47,7 @@ function NavBar({ darkMode, toggleDarkMode, selectedTab, setSelectedTab }) {
               "& .MuiTab-root": {
                 fontSize: "1.2rem",
                 fontWeight: 500,
-                padding: "12px 24px",
+                padding: "12px 35px",
                 borderRadius: "8px",
                 transition: "all 0.3s ease",
                 color: darkMode ? "#d7d7d6" : "#403f3f",

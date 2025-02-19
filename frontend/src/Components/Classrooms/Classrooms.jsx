@@ -1,9 +1,45 @@
-import React from 'react'
+import React from "react";
+import ClassroomTile from "./ClassroomTile";
+import { Box, Container } from "@mui/material";
 
-function Classrooms() {
+function Classrooms({ darkMode }) {
+  const classrooms = [
+    { title: "Classroom 1", teacher: "Prof. Noel Tiju", bgColor: "#e67e22" },
+    { title: "Classroom 2", teacher: "Prof. Johnson", bgColor: "#3498db" },
+    { title: "Classroom 3", teacher: "Prof. Davis", bgColor: "#2ecc71" },
+    { title: "Classroom 4", teacher: "Prof. Wilson", bgColor: "#9b59b6" },
+    { title: "Classroom 5", teacher: "Prof. Brown", bgColor: "#f39c12" },
+  ];
+
   return (
-    <div>Classrooms</div>
-  )
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "start",
+        padding: "70px 125px",
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "40px",
+            justifyContent: "start",
+          }}
+        >
+          {classrooms.map((classroom, index) => (
+            <Box key={index} sx={{ flex: "1 1 300px", maxWidth: "300px" }}>
+              <ClassroomTile darkMode={darkMode} {...classroom} />
+            </Box>
+          ))}
+        </Box>
+      </Container>
+    </Box>
+  );
 }
 
-export default Classrooms
+export default Classrooms;

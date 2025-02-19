@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import NavBar from "../../Components/NavBar/NavBar";
+import Classrooms from "../../Components/Classrooms/Classrooms";
+import SkillTree from "../../Components/SkillTree/SkillTree";
+import Discussions from "../../Components/Discussions/Discussions";
 
 function Home({ darkMode, toggleDarkMode }) {
-  const [selectedTab, setSelectedTab] = useState(0); // Store selected tab
+  const [selectedTab, setSelectedTab] = useState(0);
 
   return (
     <div>
@@ -11,21 +14,21 @@ function Home({ darkMode, toggleDarkMode }) {
         darkMode={darkMode} 
         toggleDarkMode={toggleDarkMode} 
         selectedTab={selectedTab} 
-        setSelectedTab={setSelectedTab} // Pass state setter
+        setSelectedTab={setSelectedTab} 
       />
       <Box
         sx={{
           height: "100vh",
           backgroundColor: darkMode ? "#353535" : "#d9d9d9",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: "start",
+          justifyContent: "start",
           position: "relative",
         }}
       >
-        {selectedTab === 0 && <Typography variant="h4">Classrooms Content</Typography>}
-        {selectedTab === 1 && <Typography variant="h4">SkillTree Content</Typography>}
-        {selectedTab === 2 && <Typography variant="h4">Discussions Content</Typography>}
+        {selectedTab === 0 && <Classrooms darkMode={darkMode} />}
+        {selectedTab === 1 && <SkillTree darkMode={darkMode} />}
+        {selectedTab === 2 && <Discussions darkMode={darkMode} />}
       </Box>
     </div>
   );
