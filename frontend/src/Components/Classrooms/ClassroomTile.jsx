@@ -1,8 +1,17 @@
 import React from "react";
-import { Card, CardActionArea, CardContent, Typography, Box } from "@mui/material";
+import { Card, CardActionArea, Typography, Box } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import {useNavigate} from "react-router-dom";
 
-function ClassroomTile({ darkMode, title, teacher, bgColor }) {
+function ClassroomTile({ darkMode, title, teacher, bgColor, classroomID }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/classroom/${classroomID}`, {
+      state: { title, teacher, bgColor, darkMode, classroomID },
+    });
+  };
+
   return (
     <Card
       sx={{
@@ -18,7 +27,7 @@ function ClassroomTile({ darkMode, title, teacher, bgColor }) {
         },
       }}
     >
-      <CardActionArea>
+      <CardActionArea onClick={handleClick}>
         {/* Top Section */}
         <Box
           sx={{

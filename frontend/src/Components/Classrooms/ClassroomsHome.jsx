@@ -2,13 +2,13 @@ import React from "react";
 import ClassroomTile from "./ClassroomTile";
 import { Box, Container } from "@mui/material";
 
-function Classrooms({ darkMode }) {
+function ClassroomsHome({ darkMode }) {
   const classrooms = [
-    { title: "Classroom 1", teacher: "Prof. Noel Tiju", bgColor: "#e67e22" },
-    { title: "Classroom 2", teacher: "Prof. Johnson", bgColor: "#3498db" },
-    { title: "Classroom 3", teacher: "Prof. Davis", bgColor: "#2ecc71" },
-    { title: "Classroom 4", teacher: "Prof. Wilson", bgColor: "#9b59b6" },
-    { title: "Classroom 5", teacher: "Prof. Brown", bgColor: "#f39c12" },
+    { title: "Classroom 1", teacher: "Prof. Noel Tiju", bgColor: "#e67e22", classroomID : "A1" },
+    { title: "Classroom 2", teacher: "Prof. Johnson", bgColor: "#3498db", classroomID : "A2" },
+    { title: "Classroom 3", teacher: "Prof. Davis", bgColor: "#2ecc71", classroomID : "A3" },
+    { title: "Classroom 4", teacher: "Prof. Wilson", bgColor: "#9b59b6", classroomID : "A4" },
+    { title: "Classroom 5", teacher: "Prof. Brown", bgColor: "#f39c12", classroomID : "A5" },
   ];
 
   return (
@@ -42,4 +42,4 @@ function Classrooms({ darkMode }) {
   );
 }
 
-export default Classrooms;
+export default ClassroomsHome;

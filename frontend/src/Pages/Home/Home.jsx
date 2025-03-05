@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box } from "@mui/material";
 import NavBar from "../../Components/NavBar/NavBar";
-import Classrooms from "../../Components/Classrooms/Classrooms";
+import ClassroomsHome from "../../Components/Classrooms/ClassroomsHome";
 import SkillTree from "../../Components/SkillTree/SkillTree";
 import Discussions from "../../Components/Discussions/Discussions";
 
@@ -26,7 +26,7 @@ function Home({ darkMode, toggleDarkMode }) {
           position: "relative",
         }}
       >
-        {selectedTab === 0 && <Classrooms darkMode={darkMode} />}
+        {selectedTab === 0 && <ClassroomsHome darkMode={darkMode} />}
         {selectedTab === 1 && <SkillTree darkMode={darkMode} />}
         {selectedTab === 2 && <Discussions darkMode={darkMode} />}
       </Box>
