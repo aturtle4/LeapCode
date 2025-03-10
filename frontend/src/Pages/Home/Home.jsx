@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box } from "@mui/material";
 import NavBar from "../../Components/NavBar/NavBar";
 import ClassroomsHome from "../../Components/Classrooms/ClassroomsHome";
-import SkillTree from "../../Components/SkillTree/SkillTree";
+import SkillTree from "../../Components/SkillTree/SkillTreeHome";
 import Discussions from "../../Components/Discussions/Discussions";
 
 function Home({ darkMode, toggleDarkMode }) {
