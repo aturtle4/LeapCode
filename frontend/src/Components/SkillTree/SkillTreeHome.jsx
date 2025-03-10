@@ -35,7 +35,7 @@ function SkillTreeHome({ darkMode }) {
                 height: "200px",
                 transition: "transform 0.2s ease-in-out",
                 "&:hover": {
-                  transform: "scale(1.03)",
+                  transform: "scale(1.02)",
                 },
               }}
             >
@@ -81,7 +81,7 @@ function SkillTreeHome({ darkMode }) {
                 {/* Next Deadline (only for private trees) */}
                 {tree.nextDeadline ? (
                   <Typography variant="body2" color="red">
-                    Deadline: {tree.nextDeadline}
+                    Next Deadline: {tree.nextDeadline}
                   </Typography>
                 ) : (
                   <Box sx={{ width: "50px" }} /> // Empty space for alignment

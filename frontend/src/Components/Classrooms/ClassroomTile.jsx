@@ -16,7 +16,7 @@ function ClassroomTile({ darkMode, title, teacher, bgColor, classroomID }) {
     <Card
       sx={{
         width: 300,
-        borderRadius: 2,
+        borderRadius: 5,
         overflow: "hidden",
         backgroundColor: darkMode ? "#333" : "#fff",
         boxShadow: 3,
@@ -31,7 +31,7 @@ function ClassroomTile({ darkMode, title, teacher, bgColor, classroomID }) {
         {/* Top Section */}
         <Box
           sx={{
-            height: 100,
+            height: 80,
             backgroundColor: bgColor || "#e67e22",
             color: "white",
             display: "flex",
@@ -52,7 +52,7 @@ function ClassroomTile({ darkMode, title, teacher, bgColor, classroomID }) {
         {/* Bottom Section */}
         <Box
           sx={{
-            height: 120,
+            height: 100,
             backgroundColor: darkMode ? "#424242" : "#f0f0f0",
           }}
         />
