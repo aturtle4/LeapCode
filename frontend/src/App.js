@@ -4,6 +4,7 @@ import "./App.css";
 import Home from "./Pages/Home/Home";
 import Auth from "./Pages/Auth/Auth";
 import ClassroomPage from "./Pages/Classrooms/Classroom";
+import SkillTree from "./Pages/SkillTree/SkillTree";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -19,6 +20,7 @@ function App() {
         <Route path="/auth" element={<Auth darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
         <Route path="/home" element={<Home darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
         <Route path="/classroom/:id" element={<ClassroomPage darkMode={darkMode} toggleDarkMode = {toggleDarkMode} />} />
+        <Route path="/skillTree/:id" element={<SkillTree darkMode={darkMode} toggleDarkMode = {toggleDarkMode} />} />
       </Routes>
     </div>
   );

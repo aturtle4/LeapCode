@@ -1,8 +1,11 @@
 import React from "react";
-import { Box, Typography, Avatar, CircularProgress, Grid, Paper } from "@mui/material";
+import { Box, Typography, Avatar, CircularProgress, Grid, Card, CardActionArea, CardContent } from "@mui/material";
 import { Person } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 function SkillTreeHome({ darkMode }) {
+  const navigate = useNavigate();
+
   const skillTrees = [
     { skilTreeID: "ST1", title: "OOPs Fundamentals", bgColor: "#e74c3c", guide: "", percentageCompleted: 59, nextDeadline: "" },
     { skilTreeID: "ST2", title: "Design Patterns: 101", bgColor: "#f39c12", guide: "Dr. Noel Tiju", percentageCompleted: 10, nextDeadline: "10 March" },
@@ -23,12 +26,11 @@ function SkillTreeHome({ darkMode }) {
       <Grid container spacing={4}>
         {skillTrees.map((tree) => (
           <Grid item xs={12} sm={6} md={4} key={tree.skilTreeID}>
-            <Paper
-              elevation={6}
+            <Card
               sx={{
                 borderRadius: "15px",
                 overflow: "hidden",
-                backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+                backgroundColor: darkMode ? "#353535" : "#ffffff",
                 color: darkMode ? "#d7d7d6" : "#403f3f",
                 display: "flex",
                 flexDirection: "column",
@@ -39,67 +41,70 @@ function SkillTreeHome({ darkMode }) {
                 },
               }}
             >
-              {/* Top Section (Title & Guide) */}
-              <Box
-                sx={{
-                  backgroundColor: tree.bgColor,
-                  padding: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight="bold">
-                    {tree.title}
-                  </Typography>
-                  {tree.guide && (
-                    <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                      {tree.guide}
+              <CardActionArea onClick={() => navigate(`/skillTree/${tree.skilTreeID}`)}>
+                {/* Top Section (Title & Guide) */}
+                <Box
+                  sx={{
+                    backgroundColor: tree.bgColor,
+                    padding: "15px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      {tree.title}
                     </Typography>
+                    {tree.guide && (
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        {tree.guide}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Show Avatar only if private (i.e., has a guide) */}
+                  {tree.guide && (
+                    <Avatar sx={{ bgcolor: "rgba(255, 255, 255, 0.3)" }}>
+                      <Person />
+                    </Avatar>
                   )}
                 </Box>
 
-                {/* Show Avatar only if private (i.e., has a guide) */}
-                {tree.guide && (
-                  <Avatar sx={{ bgcolor: "rgba(255, 255, 255, 0.3)" }}>
-                    <Person />
-                  </Avatar>
-                )}
-              </Box>
+                {/* Bottom Section (Deadline & Progress) */}
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexGrow: 1,
+                    }}
+                  >
+                    {/* Next Deadline (only for private trees) */}
+                    {tree.nextDeadline ? (
+                      <Typography variant="body2" color="red">
+                        Next Deadline: {tree.nextDeadline}
+                      </Typography>
+                    ) : (
+                      <Box sx={{ width: "50px" }} /> // Empty space for alignment
+                    )}
 
-              {/* Bottom Section (Deadline & Progress) */}
-              <Box
-                sx={{
-                  padding: "15px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexGrow: 1,
-                }}
-              >
-                {/* Next Deadline (only for private trees) */}
-                {tree.nextDeadline ? (
-                  <Typography variant="body2" color="red">
-                    Next Deadline: {tree.nextDeadline}
-                  </Typography>
-                ) : (
-                  <Box sx={{ width: "50px" }} /> // Empty space for alignment
-                )}
-
-                {/* Circular Progress (Aligned to Right) */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={tree.percentageCompleted}
-                    size={50}
-                    thickness={5}
-                    sx={{ color: tree.bgColor }}
-                  />
-                  <Typography variant="h6">{tree.percentageCompleted}%</Typography>
-                </Box>
-              </Box>
-            </Paper>
+                    {/* Circular Progress (Aligned to Right) */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <CircularProgress
+                        variant="determinate"
+                        value={tree.percentageCompleted}
+                        size={50}
+                        thickness={5}
+                        sx={{ color: tree.bgColor }}
+                      />
+                      <Typography variant="h6">{tree.percentageCompleted}%</Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </CardActionArea>
+            </Card>
           </Grid>
         ))}
       </Grid>
