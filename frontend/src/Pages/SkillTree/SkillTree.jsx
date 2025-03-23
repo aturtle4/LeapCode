@@ -4,11 +4,9 @@ import {
   Box,
   Typography,
   Paper,
-  Button,
   IconButton,
   Collapse,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { ArrowBack, ExpandLess, ExpandMore } from "@mui/icons-material";
 
 
@@ -29,6 +27,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
   ];
 
   const skillTree = skillTrees.find((c) => c.skilTreeID === id);
+
 
   if (!skillTree) {
     return (
@@ -55,6 +54,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP1",
             content: "Define a simple `Person` class in Java with attributes `name` and `age`.",
           },
         ],
@@ -73,6 +73,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP2",
             content: "Create a `Car` class in Java with methods `accelerate()` and `brake()`.",
           },
         ],
@@ -91,6 +92,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP3",
             content: "Modify the `Car` class to make its attributes private and add getter methods.",
           },
         ],
@@ -112,6 +114,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP4",
             content: "List three commonly used design patterns and briefly describe their use cases.",
           },
         ],
@@ -130,6 +133,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP5",
             content: "Implement the Singleton pattern in Python with a private constructor.",
           },
         ],
@@ -148,6 +152,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP6",
             content: "Implement a `ShapeFactory` in Java that creates objects of different shape types (Circle, Square).",
           },
         ],
@@ -169,6 +174,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP7",
             content: "Implement a linked list in C++ with `insert()` and `delete()` functions.",
           },
         ],
@@ -187,6 +193,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP8",
             content: "Implement a stack using an array in Python.",
           },
         ],
@@ -205,6 +212,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP9",
             content: "Implement a binary search tree in Java.",
           },
         ],
@@ -226,6 +234,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP10",
             content: "Solve the 'Two Sum' problem on LeetCode.",
           },
         ],
@@ -244,6 +253,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP11",
             content: "Analyze the time complexity of the Bubble Sort algorithm.",
           },
         ],
@@ -265,6 +275,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP12",
             content: "Write an SQL query to fetch all employees with a salary above $50,000.",
           },
         ],
@@ -283,6 +294,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP13",
             content: "Write an SQL query to get all orders with customer details using INNER JOIN.",
           },
         ],
@@ -304,6 +316,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP14",
             content: "Implement the Merge Sort algorithm in C++.",
           },
         ],
@@ -322,6 +335,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           },
           {
             type: "problem",
+            id:"PP15",
             content: "Implement Dijkstra's algorithm in Python.",
           },
         ],
@@ -339,9 +353,10 @@ function SkillTree({ darkMode, toggleDarkMode }) {
   };
 
   return (
-    <div >
+    <div style={{backgroundColor: darkMode ? "#353535" : "#d9d9d9",}} >
     <Box
       sx={{
+        minHeight:"100vh",
         maxHeight: "100vh",
         backgroundColor: darkMode ? "#353535" : "#d9d9d9",
         color: darkMode ? "#d7d7d6" : "#403f3f",
@@ -359,15 +374,15 @@ function SkillTree({ darkMode, toggleDarkMode }) {
           justifyContent: "space-between",
         }}
       >
-        <IconButton onClick={() => navigate("/home")} sx={{ color: "#d7d7d6" }}>
+        <IconButton onClick={() => navigate("/home")} sx={{ color: "#fff" }}>
           <ArrowBack fontSize="large" />
         </IconButton>
         <Box sx={{ textAlign: "center", flexGrow: 1 }}>
-          <Typography variant="h5" fontWeight="bold" color="#d7d7d6">
+          <Typography variant="h5" fontWeight="bold" color="#fff">
             {skillTree.title}
           </Typography>
           {skillTree.guide && (
-            <Typography variant="body1" color="#d7d7d6">
+            <Typography variant="body1" color="#fff">
               Guide: {skillTree.guide}
             </Typography>
           )}
@@ -383,6 +398,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
               padding: "20px",
               borderRadius: "20px",
               backgroundColor: darkMode ? "#424242" : "#ffffff",
+              color: darkMode ? "#d7d7d6" : "#403f3f",
             }}
           >
             <Typography variant="h6" fontWeight="bold">
@@ -396,7 +412,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
                     {step.title || `Step ${stepIndex + 1}`}
                   </Typography>
                   <IconButton onClick={() => toggleStep(nodeIndex, stepIndex)}>
-                    {expandedSteps[`${nodeIndex}-${stepIndex}`] ? <ExpandLess /> : <ExpandMore />}
+                    {expandedSteps[`${nodeIndex}-${stepIndex}`] ? <ExpandLess style={{color: darkMode? "#d7d7d6" : "#403f3f"}}/> : <ExpandMore style={{color: darkMode? "#d7d7d6" : "#403f3f"}}/>}
                   </IconButton>
                 </Box>
                 <Collapse in={expandedSteps[`${nodeIndex}-${stepIndex}`]}>
@@ -420,14 +436,29 @@ function SkillTree({ darkMode, toggleDarkMode }) {
                     </Typography>
                   )}
 
-                  {step.type === "problem" && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" fontWeight="bold">
-                        Problem:
-                      </Typography>
-                      <Typography variant="body1">{step.content}</Typography>
-                    </Box>
-                  )}
+                {step.type === "problem" && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" fontWeight="bold">
+                    Problem:
+                    </Typography>
+                    <IconButton
+                    onClick={() => navigate(`/skillTree/${id}/PracticeProblem/${step.content}/${step.id}`)}
+                    sx={{
+                        mt: 1,
+                        padding: "10px 15px",
+                        borderRadius: "10px",
+                        backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+                        color: "#fff",
+                        '&:hover': { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
+                    }}
+                    >
+                    <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                        {step.content}
+                    </Typography>
+                    </IconButton>
+                </Box>
+                )}
+
                 </Collapse>
               </Box>
             ))}
