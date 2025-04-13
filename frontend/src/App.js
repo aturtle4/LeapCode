@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-import Home from "./Pages/Home/Home";
-import Auth from "./Pages/Auth/Auth";
-import ClassroomPage from "./Pages/Classrooms/Classroom";
-import SkillTree from "./Pages/SkillTree/SkillTree";
-import PracticeProblem from "./Pages/PracticeProblem/PracticeProblem";
+import Home from "./pages/Home/Home";
+import Auth from "./pages/Auth/Auth";
+import ClassroomPage from "./pages/Classrooms/Classroom";
+import SkillTree from "./pages/SkillTree/SkillTree";
+import PracticeProblem from "./pages/PracticeProblem/PracticeProblem";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);

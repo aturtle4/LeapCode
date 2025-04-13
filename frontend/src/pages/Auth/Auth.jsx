@@ -3,7 +3,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import InfoIcon from "@mui/icons-material/Info";
 import { Box, Card, TextField, Typography, Button, Tabs, Tab } from "@mui/material";
-import Auth_NavBar from "../../Components/Auth_NavBar/Auth_NavBar";
+import Auth_NavBar from "../../components/Auth_NavBar/Auth_NavBar";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 

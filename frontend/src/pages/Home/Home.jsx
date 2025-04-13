@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Box } from "@mui/material";
-import NavBar from "../../Components/NavBar/NavBar";
-import ClassroomsHome from "../../Components/Classrooms/ClassroomsHome";
-import SkillTree from "../../Components/SkillTree/SkillTreeHome";
-import Discussions from "../../Components/Discussions/Discussions";
+import NavBar from "../../components/NavBar/NavBar";
+import ClassroomsHome from "../../components/Classrooms/ClassroomsHome";
+import SkillTree from "../../components/SkillTree/SkillTreeHome";
+import Discussions from "../../components/Discussions/Discussions";
 
 function Home({ darkMode, toggleDarkMode }) {
   const [selectedTab, setSelectedTab] = useState(0);

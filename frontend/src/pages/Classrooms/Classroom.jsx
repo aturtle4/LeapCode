@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Tabs, Tab, Paper, IconButton } from "@mui/material";
 import { ArrowBack, AccountCircle } from "@mui/icons-material";
-import StreamTab from "../../Components/Classrooms/Tabs/StreamTab";
-import ClassworkTab from "../../Components/Classrooms/Tabs/ClassworkTab";
-import PeopleTab from "../../Components/Classrooms/Tabs/PeopleTab";
+import StreamTab from "../../components/Classrooms/Tabs/StreamTab";
+import ClassworkTab from "../../components/Classrooms/Tabs/ClassworkTab";
+import PeopleTab from "../../components/Classrooms/Tabs/PeopleTab";
 
 function ClassroomPage({ darkMode }) {
   const { id } = useParams();

@@ -1,8 +1,8 @@
 import React from 'react'
 import { useParams, useNavigate } from "react-router-dom";
-import ProblemLeftBar from '../../Components/PracticeProblem/ProblemLeftBar';
-import ProblemTopBar from '../../Components/PracticeProblem/ProblemTopBar';
-import ProblemRightDraggableArea from '../../Components/PracticeProblem/ProblemRightDraggableArea';
+import ProblemLeftBar from '../../components/PracticeProblem/ProblemLeftBar';
+import ProblemTopBar from '../../components/PracticeProblem/ProblemTopBar';
+import ProblemRightDraggableArea from '../../components/PracticeProblem/ProblemRightDraggableArea';
 
 function PracticeProblem({darkMode, toggleDarkMode}) {
     const { treeid, problemName, problemid } = useParams();
