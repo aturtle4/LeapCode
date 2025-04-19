@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -6,344 +6,96 @@ import {
   Paper,
   IconButton,
   Collapse,
+  Button,
+  CircularProgress,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Menu,
+  MenuItem,
+  Fab,
 } from "@mui/material";
-import { ArrowBack, ExpandLess, ExpandMore } from "@mui/icons-material";
-
-
+import {
+  ArrowBack,
+  ExpandLess,
+  ExpandMore,
+  OpenInNew,
+  School,
+  MoreVert,
+  LinkOff,
+  Add,
+} from "@mui/icons-material";
+import { googleClassroomAPI } from "../../services/googleClassroomAPI";
+import { skillTreeAPI } from "../../services/skillTreeAPI";
+import LinkClassroomModal from "../../components/SkillTree/LinkClassroomModal";
+import NodeForm from "../../components/SkillTree/NodeForm";
 
 function SkillTree({ darkMode, toggleDarkMode }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [expandedSteps, setExpandedSteps] = useState({});
+  const [classroom, setClassroom] = useState(null);
+  const [skillTree, setSkillTree] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
 
+  // New state for node form
+  const [nodeFormOpen, setNodeFormOpen] = useState(false);
 
-  const skillTrees = [
-    { skilTreeID: "ST1", title: "OOPs Fundamentals", bgColor: "#e74c3c", guide: "", percentageCompleted: 59, nextDeadline: "" },
-    { skilTreeID: "ST2", title: "Design Patterns: 101", bgColor: "#f39c12", guide: "Dr. Noel Tiju", percentageCompleted: 10, nextDeadline: "10 March" },
-    { skilTreeID: "ST3", title: "Data Structures Mastery", bgColor: "#3498db", guide: "", percentageCompleted: 35, nextDeadline: "" },
-    { skilTreeID: "ST4", title: "Competitive Programming Essentials", bgColor: "#2ecc71", guide: "Prof. Daniel", percentageCompleted: 20, nextDeadline: "15 March" },
-    { skilTreeID: "ST5", title: "SQL & Databases", bgColor: "#9b59b6", guide: "", percentageCompleted: 75, nextDeadline: "" },
-    { skilTreeID: "ST6", title: "Algorithm Explorer", bgColor: "#f39c12", guide: "Dr. Smith", percentageCompleted: 50, nextDeadline: "22 March" },
-  ];
+  // New state for classroom linking
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const menuOpen = Boolean(menuAnchorEl);
 
-  const skillTree = skillTrees.find((c) => c.skilTreeID === id);
+  // Fetch skill tree data and associated Google Classroom on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
+        // Fetch skill tree data
+        const treeData = await skillTreeAPI.getSkillTree(id);
+        setSkillTree(treeData);
 
-  if (!skillTree) {
-    return (
-      <Typography variant="h4" sx={{ textAlign: "center", mt: 5 }}>
-        Skill Tree Not Found
-      </Typography>
-    );
-  }
+        // Fetch associated classroom if there is one
+        try {
+          const classroomData =
+            await googleClassroomAPI.getClassroomForSkillTree(id);
+          setClassroom(classroomData);
+        } catch (classroomErr) {
+          // It's ok if there's no classroom associated yet
+          console.log("No classroom linked to this skill tree");
+        }
 
-  // Dummy nodes for each skill tree
-  const skillTreeNodes = {
-    ST1: [
-      {
-        title: "Introduction to OOP",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/WqQsuIW2k0M",
-            title: "What is Object-Oriented Programming?",
-          },
-          {
-            type: "text",
-            content: "OOP is a programming paradigm that organizes code using objects and classes...",
-          },
-          {
-            type: "problem",
-            id:"PP1",
-            content: "Define a simple `Person` class in Java with attributes `name` and `age`.",
-          },
-        ],
-      },
-      {
-        title: "Classes and Objects",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/kJEsTjH5mVg",
-            title: "Understanding Classes and Objects",
-          },
-          {
-            type: "text",
-            content: "A class is a blueprint for creating objects. It defines properties and behaviors.",
-          },
-          {
-            type: "problem",
-            id:"PP2",
-            content: "Create a `Car` class in Java with methods `accelerate()` and `brake()`.",
-          },
-        ],
-      },
-      {
-        title: "Encapsulation and Abstraction",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/W7mR3M5mwdU",
-            title: "Encapsulation Explained",
-          },
-          {
-            type: "text",
-            content: "Encapsulation is the bundling of data with methods that operate on the data...",
-          },
-          {
-            type: "problem",
-            id:"PP3",
-            content: "Modify the `Car` class to make its attributes private and add getter methods.",
-          },
-        ],
-      },
-    ],
-  
-    ST2: [
-      {
-        title: "Introduction to Design Patterns",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/NU_1StN5Tkk",
-            title: "What are Design Patterns?",
-          },
-          {
-            type: "text",
-            content: "Design patterns provide reusable solutions to common software design problems...",
-          },
-          {
-            type: "problem",
-            id:"PP4",
-            content: "List three commonly used design patterns and briefly describe their use cases.",
-          },
-        ],
-      },
-      {
-        title: "Singleton Pattern",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/hUE_j6q0LTQ",
-            title: "Understanding the Singleton Pattern",
-          },
-          {
-            type: "text",
-            content: "The Singleton Pattern ensures that a class has only one instance and provides a global point of access...",
-          },
-          {
-            type: "problem",
-            id:"PP5",
-            content: "Implement the Singleton pattern in Python with a private constructor.",
-          },
-        ],
-      },
-      {
-        title: "Factory Pattern",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/ExhgZZlzD6g",
-            title: "Factory Pattern in Action",
-          },
-          {
-            type: "text",
-            content: "The Factory Pattern is used to create objects without specifying the exact class...",
-          },
-          {
-            type: "problem",
-            id:"PP6",
-            content: "Implement a `ShapeFactory` in Java that creates objects of different shape types (Circle, Square).",
-          },
-        ],
-      },
-    ],
-  
-    ST3: [
-      {
-        title: "Arrays and Linked Lists",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/B31LgI4Y4DQ",
-            title: "Understanding Data Structures",
-          },
-          {
-            type: "text",
-            content: "Arrays and linked lists are fundamental data structures that store collections of data...",
-          },
-          {
-            type: "problem",
-            id:"PP7",
-            content: "Implement a linked list in C++ with `insert()` and `delete()` functions.",
-          },
-        ],
-      },
-      {
-        title: "Stacks and Queues",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/0umWm9I2ZQ0",
-            title: "Stacks and Queues Explained",
-          },
-          {
-            type: "text",
-            content: "Stacks follow LIFO (Last In First Out), whereas queues follow FIFO (First In First Out)...",
-          },
-          {
-            type: "problem",
-            id:"PP8",
-            content: "Implement a stack using an array in Python.",
-          },
-        ],
-      },
-      {
-        title: "Trees and Graphs",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/K7J3nCeRC80",
-            title: "Introduction to Trees and Graphs",
-          },
-          {
-            type: "text",
-            content: "Trees and graphs are non-linear data structures used for hierarchical data representation...",
-          },
-          {
-            type: "problem",
-            id:"PP9",
-            content: "Implement a binary search tree in Java.",
-          },
-        ],
-      },
-    ],
-  
-    ST4: [
-      {
-        title: "Competitive Programming Basics",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/ekcwMsSIzVc",
-            title: "How to Start Competitive Programming",
-          },
-          {
-            type: "text",
-            content: "Competitive programming involves solving algorithmic problems efficiently...",
-          },
-          {
-            type: "problem",
-            id:"PP10",
-            content: "Solve the 'Two Sum' problem on LeetCode.",
-          },
-        ],
-      },
-      {
-        title: "Time Complexity Analysis",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/FPu9Uld7W-E",
-            title: "Understanding Big-O Notation",
-          },
-          {
-            type: "text",
-            content: "Time complexity helps us analyze how the execution time of an algorithm grows...",
-          },
-          {
-            type: "problem",
-            id:"PP11",
-            content: "Analyze the time complexity of the Bubble Sort algorithm.",
-          },
-        ],
-      },
-    ],
-  
-    ST5: [
-      {
-        title: "SQL Basics",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/HXV3zeQKqGY",
-            title: "Introduction to SQL",
-          },
-          {
-            type: "text",
-            content: "SQL (Structured Query Language) is used to manage and query relational databases...",
-          },
-          {
-            type: "problem",
-            id:"PP12",
-            content: "Write an SQL query to fetch all employees with a salary above $50,000.",
-          },
-        ],
-      },
-      {
-        title: "Joins and Subqueries",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/2HVMiPPuPIM",
-            title: "Understanding SQL Joins",
-          },
-          {
-            type: "text",
-            content: "Joins allow us to combine data from multiple tables...",
-          },
-          {
-            type: "problem",
-            id:"PP13",
-            content: "Write an SQL query to get all orders with customer details using INNER JOIN.",
-          },
-        ],
-      },
-    ],
-  
-    ST6: [
-      {
-        title: "Sorting Algorithms",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/e0XskN3HTgU",
-            title: "Sorting Algorithms Explained",
-          },
-          {
-            type: "text",
-            content: "Sorting algorithms are used to arrange data in a specific order...",
-          },
-          {
-            type: "problem",
-            id:"PP14",
-            content: "Implement the Merge Sort algorithm in C++.",
-          },
-        ],
-      },
-      {
-        title: "Graph Algorithms",
-        steps: [
-          {
-            type: "video",
-            content: "https://www.youtube.com/embed/09_LlHjoEiY",
-            title: "Introduction to Graph Algorithms",
-          },
-          {
-            type: "text",
-            content: "Graph algorithms help solve problems involving networks, paths, and relationships...",
-          },
-          {
-            type: "problem",
-            id:"PP15",
-            content: "Implement Dijkstra's algorithm in Python.",
-          },
-        ],
-      },
-    ],
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load skill tree:", err);
+        setError(err.detail || "Failed to load skill tree. Please try again.");
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  // Handle opening classroom
+  const handleOpenClassroom = () => {
+    if (classroom && classroom.url) {
+      googleClassroomAPI.openClassroom(classroom.url);
+    } else {
+      setSnackbarMessage("No classroom associated with this skill tree");
+      setSnackbarSeverity("warning");
+      setOpenSnackbar(true);
+    }
   };
-  
-  const nodes = skillTreeNodes[id] || [];
+
+  const handleSnackbarClose = () => {
+    setOpenSnackbar(false);
+  };
 
   const toggleStep = (nodeIndex, stepIndex) => {
     setExpandedSteps((prev) => ({
@@ -352,120 +104,405 @@ function SkillTree({ darkMode, toggleDarkMode }) {
     }));
   };
 
-  return (
-    <div style={{backgroundColor: darkMode ? "#353535" : "#d9d9d9",}} >
-    <Box
-      sx={{
-        minHeight:"100vh",
-        maxHeight: "100vh",
-        backgroundColor: darkMode ? "#353535" : "#d9d9d9",
-        color: darkMode ? "#d7d7d6" : "#403f3f",
-        padding: "20px",
-      }}
-    >
-      {/* Header */}
-      <Paper
+  // Handle a successful node addition
+  const handleNodeAdded = (updatedSkillTree) => {
+    setSkillTree(updatedSkillTree);
+    setSnackbarMessage("New learning node added successfully!");
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
+  };
+
+  if (loading) {
+    return (
+      <Box
         sx={{
-          padding: "20px",
-          borderRadius: "20px",
-          backgroundColor: skillTree.bgColor,
           display: "flex",
+          justifyContent: "center",
           alignItems: "center",
-          justifyContent: "space-between",
+          height: "100vh",
+          backgroundColor: darkMode ? "#353535" : "#d9d9d9",
         }}
       >
-        <IconButton onClick={() => navigate("/home")} sx={{ color: "#fff" }}>
-          <ArrowBack fontSize="large" />
-        </IconButton>
-        <Box sx={{ textAlign: "center", flexGrow: 1 }}>
-          <Typography variant="h5" fontWeight="bold" color="#fff">
-            {skillTree.title}
-          </Typography>
-          {skillTree.guide && (
-            <Typography variant="body1" color="#fff">
-              Guide: {skillTree.guide}
+        <CircularProgress
+          size={60}
+          sx={{ color: darkMode ? "#90caf9" : "#1976d2" }}
+        />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+          color: darkMode ? "#d7d7d6" : "#403f3f",
+          padding: "20px",
+        }}
+      >
+        <Typography variant="h5" color="error" gutterBottom>
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/home")}
+          sx={{ mt: 2 }}
+        >
+          Return to Home
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!skillTree) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+          color: darkMode ? "#d7d7d6" : "#403f3f",
+          padding: "20px",
+        }}
+      >
+        <Typography variant="h5" gutterBottom>
+          Skill Tree Not Found
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/home")}
+          sx={{ mt: 2 }}
+        >
+          Return to Home
+        </Button>
+      </Box>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: darkMode ? "#353535" : "#d9d9d9" }}>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          maxHeight: "100vh",
+          backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+          color: darkMode ? "#d7d7d6" : "#403f3f",
+          padding: "20px",
+        }}
+      >
+        {/* Header */}
+        <Paper
+          sx={{
+            padding: "20px",
+            borderRadius: "20px",
+            backgroundColor: skillTree.bg_color,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <IconButton onClick={() => navigate("/home")} sx={{ color: "#fff" }}>
+            <ArrowBack fontSize="large" />
+          </IconButton>
+          <Box sx={{ textAlign: "center", flexGrow: 1 }}>
+            <Typography variant="h5" fontWeight="bold" color="#fff">
+              {skillTree.title}
             </Typography>
+            {skillTree.guide && (
+              <Typography variant="body1" color="#fff">
+                Guide: {skillTree.guide}
+              </Typography>
+            )}
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {loading ? (
+              <CircularProgress color="inherit" size={24} />
+            ) : (
+              <>
+                {classroom ? (
+                  <Tooltip title={`Open ${classroom.name}`}>
+                    <IconButton
+                      onClick={handleOpenClassroom}
+                      sx={{ color: "#fff", mr: 1 }}
+                      aria-label="Open classroom"
+                    >
+                      <School fontSize="large" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+
+                <Tooltip title="Classroom settings">
+                  <IconButton
+                    onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+                    sx={{ color: "#fff" }}
+                    aria-label="Classroom settings"
+                  >
+                    <MoreVert fontSize="large" />
+                  </IconButton>
+                </Tooltip>
+
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={menuOpen}
+                  onClose={() => setMenuAnchorEl(null)}
+                  PaperProps={{
+                    sx: {
+                      backgroundColor: darkMode ? "#424242" : "#ffffff",
+                      color: darkMode ? "#d7d7d6" : "#403f3f",
+                    },
+                  }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchorEl(null);
+                      setLinkModalOpen(true);
+                    }}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <School fontSize="small" />
+                    {classroom ? "Change classroom link" : "Link to classroom"}
+                  </MenuItem>
+
+                  {classroom && (
+                    <MenuItem
+                      onClick={async () => {
+                        try {
+                          setMenuAnchorEl(null);
+                          await googleClassroomAPI.unlinkSkillTreeFromClassroom(
+                            id
+                          );
+                          setClassroom(null);
+                          setSnackbarMessage(
+                            "Classroom link removed successfully"
+                          );
+                          setSnackbarSeverity("success");
+                          setOpenSnackbar(true);
+                        } catch (err) {
+                          console.error("Failed to unlink classroom:", err);
+                          setSnackbarMessage("Failed to remove classroom link");
+                          setSnackbarSeverity("error");
+                          setOpenSnackbar(true);
+                        }
+                      }}
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <LinkOff fontSize="small" />
+                      Remove classroom link
+                    </MenuItem>
+                  )}
+                </Menu>
+              </>
+            )}
+          </Box>
+        </Paper>
+
+        {/* Skill Tree Content */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            marginTop: "20px",
+            maxHeight: "85vh",
+            overflowY: "auto",
+            pb: 10, // Add padding at bottom to make space for FAB
+          }}
+        >
+          {skillTree.nodes && skillTree.nodes.length > 0 ? (
+            skillTree.nodes.map((node, nodeIndex) => (
+              <Paper
+                key={nodeIndex}
+                sx={{
+                  padding: "20px",
+                  borderRadius: "20px",
+                  backgroundColor: darkMode ? "#424242" : "#ffffff",
+                  color: darkMode ? "#d7d7d6" : "#403f3f",
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold">
+                  {node.title || `Node ${nodeIndex + 1}`}
+                </Typography>
+
+                {node.steps.map((step, stepIndex) => (
+                  <Box key={stepIndex} sx={{ mt: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Typography variant="body1" fontWeight="bold">
+                        {step.title || `Step ${stepIndex + 1}`}
+                      </Typography>
+                      <IconButton
+                        onClick={() => toggleStep(nodeIndex, stepIndex)}
+                      >
+                        {expandedSteps[`${nodeIndex}-${stepIndex}`] ? (
+                          <ExpandLess
+                            style={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
+                          />
+                        ) : (
+                          <ExpandMore
+                            style={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
+                          />
+                        )}
+                      </IconButton>
+                    </Box>
+                    <Collapse in={expandedSteps[`${nodeIndex}-${stepIndex}`]}>
+                      {step.type === "video" && (
+                        <Box sx={{ mt: 2 }}>
+                          <iframe
+                            width="100%"
+                            height="315"
+                            src={step.content}
+                            title={`Video ${stepIndex + 1}`}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        </Box>
+                      )}
+
+                      {step.type === "text" && (
+                        <Typography variant="body1" sx={{ mt: 2 }}>
+                          {step.content}
+                        </Typography>
+                      )}
+
+                      {step.type === "problem" && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            Problem:
+                          </Typography>
+                          <IconButton
+                            onClick={() =>
+                              navigate(
+                                `/skillTree/${id}/PracticeProblem/${step.content}/${step.id}`
+                              )
+                            }
+                            sx={{
+                              mt: 1,
+                              padding: "10px 15px",
+                              borderRadius: "10px",
+                              backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+                              color: "#fff",
+                              "&:hover": {
+                                backgroundColor: darkMode
+                                  ? "#1565c0"
+                                  : "#1565c0",
+                              },
+                            }}
+                          >
+                            <Typography
+                              variant="body1"
+                              sx={{ fontWeight: "bold" }}
+                            >
+                              {step.content}
+                            </Typography>
+                          </IconButton>
+                        </Box>
+                      )}
+                    </Collapse>
+                  </Box>
+                ))}
+              </Paper>
+            ))
+          ) : (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "60vh",
+                textAlign: "center",
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                No learning nodes available yet
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                Get started by adding your first learning node to this skill
+                tree
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setNodeFormOpen(true)}
+                sx={{
+                  backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+                  "&:hover": {
+                    backgroundColor: darkMode ? "#1565c0" : "#1565c0",
+                  },
+                }}
+              >
+                Add First Node
+              </Button>
+            </Box>
           )}
         </Box>
-      </Paper>
 
-      {/* Skill Tree Content */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3, marginTop: "20px", maxHeight: "85vh", overflowY: "auto"}}>
-        {nodes.map((node, nodeIndex) => (
-          <Paper
-            key={nodeIndex}
+        {/* Floating Action Button for adding nodes (only shown if nodes already exist) */}
+        {skillTree.nodes && skillTree.nodes.length > 0 && (
+          <Fab
+            color="primary"
+            aria-label="add node"
+            onClick={() => setNodeFormOpen(true)}
             sx={{
-              padding: "20px",
-              borderRadius: "20px",
-              backgroundColor: darkMode ? "#424242" : "#ffffff",
-              color: darkMode ? "#d7d7d6" : "#403f3f",
+              position: "fixed",
+              bottom: 32,
+              right: 32,
+              backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+              "&:hover": { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
             }}
           >
-            <Typography variant="h6" fontWeight="bold">
-              {node.title || `Node ${nodeIndex + 1}`}
-            </Typography>
+            <Add />
+          </Fab>
+        )}
 
-            {node.steps.map((step, stepIndex) => (
-              <Box key={stepIndex} sx={{ mt: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography variant="body1" fontWeight="bold">
-                    {step.title || `Step ${stepIndex + 1}`}
-                  </Typography>
-                  <IconButton onClick={() => toggleStep(nodeIndex, stepIndex)}>
-                    {expandedSteps[`${nodeIndex}-${stepIndex}`] ? <ExpandLess style={{color: darkMode? "#d7d7d6" : "#403f3f"}}/> : <ExpandMore style={{color: darkMode? "#d7d7d6" : "#403f3f"}}/>}
-                  </IconButton>
-                </Box>
-                <Collapse in={expandedSteps[`${nodeIndex}-${stepIndex}`]}>
-                  {step.type === "video" && (
-                    <Box sx={{ mt: 2 }}>
-                      <iframe
-                        width="100%"
-                        height="315"
-                        src={step.content}
-                        title={`Video ${stepIndex + 1}`}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    </Box>
-                  )}
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbarSeverity}
+            sx={{ width: "100%" }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
 
-                  {step.type === "text" && (
-                    <Typography variant="body1" sx={{ mt: 2 }}>
-                      {step.content}
-                    </Typography>
-                  )}
+        {/* Classroom linking modal */}
+        <LinkClassroomModal
+          open={linkModalOpen}
+          onClose={() => setLinkModalOpen(false)}
+          skillTreeId={id}
+          darkMode={darkMode}
+          onSuccess={(linkedClassroom) => {
+            setClassroom(linkedClassroom);
+            setSnackbarMessage(
+              `Successfully linked to classroom: ${linkedClassroom.name}`
+            );
+            setSnackbarSeverity("success");
+            setOpenSnackbar(true);
+          }}
+        />
 
-                {step.type === "problem" && (
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" fontWeight="bold">
-                    Problem:
-                    </Typography>
-                    <IconButton
-                    onClick={() => navigate(`/skillTree/${id}/PracticeProblem/${step.content}/${step.id}`)}
-                    sx={{
-                        mt: 1,
-                        padding: "10px 15px",
-                        borderRadius: "10px",
-                        backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
-                        color: "#fff",
-                        '&:hover': { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
-                    }}
-                    >
-                    <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                        {step.content}
-                    </Typography>
-                    </IconButton>
-                </Box>
-                )}
-
-                </Collapse>
-              </Box>
-            ))}
-          </Paper>
-        ))}
+        {/* Node form modal */}
+        <NodeForm
+          open={nodeFormOpen}
+          onClose={() => setNodeFormOpen(false)}
+          skillTreeId={id}
+          darkMode={darkMode}
+          onSuccess={handleNodeAdded}
+        />
       </Box>
-    </Box>
     </div>
   );
 }

@@ -9,9 +9,14 @@ dnspython==2.7.0
 email_validator==2.2.0
 fastapi==0.115.12
 fastapi-cli==0.0.7
+google-api-python-client==2.127.0
+google-auth==2.29.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
 greenlet==3.1.1
 h11==0.14.0
 httpcore==1.0.8
+httplib2==0.22.0
 httptools==0.6.4
 httpx==0.28.1
 idna==3.10

@@ -1,8 +1,9 @@
-from sqlalchemy import Column, DateTime, String, Boolean, Integer
+from sqlalchemy import Column, DateTime, String, Boolean, Integer, Text
 from sqlalchemy.sql import func
 import uuid
 
 from app.db.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -16,9 +17,12 @@ class User(Base):
     last_name = Column(String, nullable=True)
     profile_picture = Column(String, nullable=True)
 
-    is_oauth_account= Column(Boolean, default=False)
+    is_oauth_account = Column(Boolean, default=False)
     oauth_provider = Column(String, nullable=True)
     oauth_id = Column(String, nullable=True)
+
+    # Store Google OAuth token as JSON string
+    google_token = Column(Text, nullable=True)
 
     is_teacher = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)

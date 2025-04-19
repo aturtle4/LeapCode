@@ -191,10 +191,22 @@ def refresh_token(
 @router.get("/google/auth")
 def google_auth():
     """
-    Redirect to Google OAuth login page
+    Redirect to Google OAuth login page with all required scopes
     """
+    scopes = [
+        "openid",
+        "profile",
+        "email",
+        "https://www.googleapis.com/auth/classroom.courses",
+        "https://www.googleapis.com/auth/classroom.courses.readonly",
+        "https://www.googleapis.com/auth/classroom.rosters.readonly",
+        "https://www.googleapis.com/auth/classroom.announcements",
+    ]
+
+    scope_string = "%20".join(scopes)
+
     return {
-        "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={settings.GOOGLE_CLIENT_ID}&redirect_uri={settings.GOOGLE_REDIRECT_URI}&scope=openid%20profile%20email&access_type=offline"
+        "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={settings.GOOGLE_CLIENT_ID}&redirect_uri={settings.GOOGLE_REDIRECT_URI}&scope={scope_string}&access_type=offline&prompt=consent"
     }
 
 
@@ -258,6 +270,8 @@ async def google_callback(
             first_name=userinfo.get("given_name"),
             last_name=userinfo.get("family_name"),
             profile_picture=userinfo.get("picture"),
+            # Store the complete token data for Google API access
+            google_token=json.dumps(token_data),
         )
         db.add(user)
         db.commit()
@@ -269,6 +283,14 @@ async def google_callback(
         user.oauth_id = userinfo.get("sub")
         if not user.profile_picture:
             user.profile_picture = userinfo.get("picture")
+        # Store the complete token data
+        user.google_token = json.dumps(token_data)
+        db.commit()
+        db.refresh(user)
+    else:
+        # User exists and is already connected to Google
+        # Update the token
+        user.google_token = json.dumps(token_data)
         db.commit()
         db.refresh(user)
 

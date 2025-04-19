@@ -1,34 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
 import { Box } from "@mui/material";
 import NavBar from "../../components/NavBar/NavBar";
-import ClassroomsHome from "../../components/Classrooms/ClassroomsHome";
-import SkillTree from "../../components/SkillTree/SkillTreeHome";
-import Discussions from "../../components/Discussions/Discussions";
+import SkillTreeHome from "../../components/SkillTree/SkillTreeHome";
 
 function Home({ darkMode, toggleDarkMode }) {
-  const [selectedTab, setSelectedTab] = useState(0);
-
   return (
     <div>
-      <NavBar 
-        darkMode={darkMode} 
-        toggleDarkMode={toggleDarkMode} 
-        selectedTab={selectedTab} 
-        setSelectedTab={setSelectedTab} 
+      <NavBar
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        currentPage="skillTree"
       />
       <Box
         sx={{
-          height: "100vh",
+          minHeight: "calc(100vh - 64px)", // Adjust for navbar height
           backgroundColor: darkMode ? "#353535" : "#d9d9d9",
           display: "flex",
+          flex: 1,
           alignItems: "start",
           justifyContent: "start",
           position: "relative",
         }}
       >
-        {selectedTab === 0 && <ClassroomsHome darkMode={darkMode} />}
-        {selectedTab === 1 && <SkillTree darkMode={darkMode} />}
-        {selectedTab === 2 && <Discussions darkMode={darkMode} />}
+        <SkillTreeHome darkMode={darkMode} />
       </Box>
     </div>
   );
