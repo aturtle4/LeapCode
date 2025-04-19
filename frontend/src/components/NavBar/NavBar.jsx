@@ -11,9 +11,11 @@ import {
   Tab,
 } from "@mui/material";
 import AccountCircle from "@mui/icons-material/AccountCircle";
+import { useAuth } from "../../context/AuthProvider";
 
 function NavBar({ darkMode, toggleDarkMode, selectedTab, setSelectedTab }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const { logout, user } = useAuth();
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -21,6 +23,11 @@ function NavBar({ darkMode, toggleDarkMode, selectedTab, setSelectedTab }) {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    setAnchorEl(null);
+    logout();
   };
 
   return (
@@ -70,7 +77,19 @@ function NavBar({ darkMode, toggleDarkMode, selectedTab, setSelectedTab }) {
         {/* Profile Section */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <IconButton onClick={handleMenuOpen} color="inherit">
-            <AccountCircle fontSize="large" />
+            {user?.profile_picture ? (
+              <img
+                src={user.profile_picture}
+                alt="Profile"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                }}
+              />
+            ) : (
+              <AccountCircle fontSize="large" />
+            )}
           </IconButton>
           <Menu
             anchorEl={anchorEl}
@@ -85,15 +104,27 @@ function NavBar({ darkMode, toggleDarkMode, selectedTab, setSelectedTab }) {
               },
             }}
           >
-            <MenuItem sx={{ "&:hover": { backgroundColor: darkMode ? "#555" : "#ddd" } }}>
+            <MenuItem
+              sx={{
+                "&:hover": { backgroundColor: darkMode ? "#555" : "#ddd" },
+              }}
+            >
               Profile
-            </MenuItem>
-            <MenuItem sx={{ "&:hover": { backgroundColor: darkMode ? "#555" : "#ddd" } }}>
-              Settings
             </MenuItem>
             <MenuItem
               sx={{
-                "&:hover": { backgroundColor: darkMode ? "#ff4d4d" : "#ff9999", color: "#fff" },
+                "&:hover": { backgroundColor: darkMode ? "#555" : "#ddd" },
+              }}
+            >
+              Settings
+            </MenuItem>
+            <MenuItem
+              onClick={handleLogout}
+              sx={{
+                "&:hover": {
+                  backgroundColor: darkMode ? "#ff4d4d" : "#ff9999",
+                  color: "#fff",
+                },
               }}
             >
               Logout

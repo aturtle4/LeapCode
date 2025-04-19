@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings(BaseSettings):
     # General
     PROJECT_NAME: str = "LeapCode"
@@ -11,23 +12,33 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     # Database
-    DATABASE_URL: str = os.getenv("DB_URL", "postgresql://leapcode:leapcode@db:5432/leapcode")
+    DATABASE_URL: str = os.getenv(
+        "DB_URL", "postgresql://leapcode:leapcode@db:5432/leapcode"
+    )
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 5))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+    REFRESH_TOKEN_SECRET_KEY: str = os.getenv(
+        "REFRESH_TOKEN_SECRET_KEY", "your-refresh-token-secret-key"
+    )
 
     # Google OAuth2
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "your-google-client-id")
-    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "your-google-client-secret")
-    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/auth/google/callback")
+    GOOGLE_CLIENT_SECRET: str = os.getenv(
+        "GOOGLE_CLIENT_SECRET", "your-google-client-secret"
+    )
+    GOOGLE_REDIRECT_URI: str = os.getenv(
+        "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/auth/google/callback"
+    )
 
     # CORS
     CORS_ORIGINS: list = ["http://localhost:3000"]
 
-
     class Config:
         case_sensitive = True
+
 
 settings = Settings()

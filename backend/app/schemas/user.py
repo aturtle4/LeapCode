@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
+
 class UserBase(BaseModel):
     email: EmailStr
     username: Optional[str] = None
@@ -9,19 +10,35 @@ class UserBase(BaseModel):
     last_name: Optional[str] = None
     profile_picture: Optional[str] = None
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    refresh_token: Optional[str] = None
+
+
+class TokenPair(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshToken(BaseModel):
+    refresh_token: str
+
 
 class TokenData(BaseModel):
     sub: Optional[str] = None
+
 
 class UserResponse(UserBase):
     id: str
