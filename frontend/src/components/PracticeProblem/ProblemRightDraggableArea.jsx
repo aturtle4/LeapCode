@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { backdropClasses } from '@mui/material';
 
 function DraggableBlock({ block, onPositionChange }) {
   const {
@@ -55,9 +56,7 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
         height: '100%',
         width: '100%',
         borderRadius: '10px',
-        backgroundColor: '#f7f7f7',
-        padding: '16px',
-        overflow: 'hidden',
+        overflow: 'auto',
       }}
     >
       {droppedBlocks.length > 0 ? (
@@ -68,7 +67,7 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
           />
         ))
       ) : (
-        <p>Drop blocks here!</p>
+        <p></p>
       )}
     </div>
   );
