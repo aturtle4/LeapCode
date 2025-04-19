@@ -4,7 +4,7 @@ import { ArrowBack, PlayArrow, CheckCircle, AccountCircle } from "@mui/icons-mat
 import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
 import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
-import { DndContext } from '@dnd-kit/core';
+import { DndContext, DragOverlay  } from '@dnd-kit/core';
 
 function PracticeProblem({ darkMode }) {
   const navigate = useNavigate();
@@ -18,22 +18,54 @@ function PracticeProblem({ darkMode }) {
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    
-    // Make sure the drop target is valid
-    if (over && over.id === 'droppable-area') {
-      const newBlock = {
-        id: `${active.id}-${Date.now()}`, // unique ID for each block
-        label: active.data?.current?.label || active.id, // get the label from the active item
-      };
-      
-      // Append the new block to the dropped blocks array
-      setDroppedBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+
+    if (!over) {
+      // If dragged item is outside, delete it from the droppedBlocks
+      setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
+    } else {
+      // If it's dropped within the valid area, update position or add new block
+      const isFromToolkit = active.data.current?.from === 'toolkit';
+      const id = active.id;
+
+      setDroppedBlocks((prev) => {
+        const existing = prev.find((block) => block.id === id);
+
+        if (isFromToolkit && !existing) {
+          return [
+            ...prev,
+            { id, label: active.data.current.label, x: 0, y: 0 },
+          ];
+        }
+
+        if (!isFromToolkit) {
+          return prev.map((block) =>
+            block.id === id
+              ? { ...block, x: block.x + event.delta.x, y: block.y + event.delta.y }
+              : block
+          );
+        }
+
+        return prev;
+      });
     }
+    setActiveBlock(null);
   };
-  
+  const [activeBlock, setActiveBlock] = useState(null);
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext 
+    onDragStart={(event) => {
+      const { active } = event;
+      setActiveBlock({
+        id: active.id,
+        label: active.data.current.label,
+      });
+    }}
+    onDragEnd={(event) => {
+      handleDragEnd(event);
+      // setActiveBlock(null);
+    }}
+    onDragCancel={() => setActiveBlock(null)}>
     <Box
       sx={{
         minHeight: "100vh",
@@ -180,6 +212,13 @@ function PracticeProblem({ darkMode }) {
         </Box>
       </Box>
     </Box>
+    <DragOverlay>
+        {activeBlock ? (
+          <Box sx={{ padding: '8px 12px', backgroundColor: '#7B61FF', color: '#fff', borderRadius: '8px', fontWeight: 'bold' }}>
+            {activeBlock.label}
+          </Box>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

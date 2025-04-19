@@ -1,51 +1,74 @@
-import React, { useState } from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import DroppedBlock from '../../components/PracticeProblem/DroppedBlock';
+import React from 'react';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
 
-function ProblemRightDraggableArea({ droppedBlocks, setDroppedBlocks }) {
-  const { isOver, setNodeRef } = useDroppable({ id: 'droppable-area' });
+function DraggableBlock({ block, onPositionChange }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: block.id,
+    data: {
+      ...block,
+      from: 'rightArea', // Mark it as coming from the right area
+    },
+  });
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (over && over.id === 'droppable-area') {
-      const newBlock = {
-        id: `${active.id}-${Date.now()}`,
-        label: active.data?.current?.label || active.id,
-        x: event.delta.x, // Store the position on the X axis
-        y: event.delta.y, // Store the position on the Y axis
-      };
-      setDroppedBlocks((prev) => [...prev, newBlock]);
-    }
+  const style = {
+    position: 'absolute',
+    left: transform ? block.x + transform.x : block.x,
+    top: transform ? block.y + transform.y : block.y,
+    padding: '8px',
+    backgroundColor: isDragging ? '#66bb6a' : '#4CAF50',
+    color: 'white',
+    maxWidth: '120px',
+    width: '100%',
+    borderRadius: '5px',
+    cursor: 'grab',
+    transition: isDragging ? 'none' : 'transform 0.2s ease',
   };
 
   return (
     <div
       ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+    >
+      {block.label}
+    </div>
+  );
+}
+
+function ProblemRightDraggableArea({ droppedBlocks }) {
+  const { setNodeRef } = useDroppable({
+    id: 'droppable-area',
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
       style={{
-        width: '100%',
+        position: 'relative', // Required for absolute children
         height: '100%',
-        boxSizing: 'border-box',
-        border: '2px dashed #ccc',
-        borderRadius: '8px',
-        backgroundColor: isOver ? '#e8f8f5' : '#fafafa',
-        transition: 'background-color 0.3s',
-        overflowY: 'auto',
-        overflowX: 'auto',
-        position: 'relative',
+        width: '100%',
+        borderRadius: '10px',
+        backgroundColor: '#f7f7f7',
+        padding: '16px',
+        overflow: 'hidden',
       }}
     >
-      {droppedBlocks.length === 0 ? (
-        <p style={{ color: '#aaa', margin: 0 }}>Drag blocks here</p>
-      ) : (
+      {droppedBlocks.length > 0 ? (
         droppedBlocks.map((block) => (
-          <DroppedBlock
+          <DraggableBlock
             key={block.id}
-            id={block.id}
-            label={block.label}
-            x={block.x} // Pass position to DroppedBlock
-            y={block.y} // Pass position to DroppedBlock
+            block={block}
           />
         ))
+      ) : (
+        <p>Drop blocks here!</p>
       )}
     </div>
   );

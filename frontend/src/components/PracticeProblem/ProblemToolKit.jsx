@@ -1,6 +1,40 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
-import DraggableBlock from '../../components/PracticeProblem/DraggableBlock'; 
+import { useDraggable } from '@dnd-kit/core';
+
+// Draggable Block Component
+const ToolkitBlock = ({ id, label, category }) => {
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id,
+    data: {
+      label,
+      category, // Add category to data for better management
+      from: 'toolkit', // Mark that it comes from the toolkit
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{
+        padding: '10px 16px',
+        backgroundColor: '#7B61FF',
+        color: 'white',
+        marginBottom: '12px',
+        marginRight: '12px',
+        height: 'fit-content',
+        borderRadius: '8px',
+        cursor: 'grab',
+        fontWeight: 500,
+        width: 'fit-content',
+      }}
+    >
+      {label}
+    </div>
+  );
+};
 
 function ProblemToolKit() {
   const [activeTab, setActiveTab] = useState(0);
@@ -19,24 +53,31 @@ function ProblemToolKit() {
 
   const blocks = {
     0: [ // Variables
-      { id: 'var1', label: 'Set Variable' },
-      { id: 'var2', label: 'Change Variable' },
+      { id: 'var1', label: 'Set Variable', category: 'variables' },
+      { id: 'var2', label: 'Change Variable', category: 'variables' },
+      { id: 'var3', label: 'Use Variable', category: 'variables' },
+      { id: 'var4', label: 'Set Variable Again', category: 'variables' },
     ],
     1: [ // Flow
-      { id: 'flow1', label: 'Loop' },
-      { id: 'flow2', label: 'Wait' },
+      { id: 'flow1', label: 'Start', category: 'flow' },
+      { id: 'flow2', label: 'End', category: 'flow' },
+      { id: 'flow3', label: 'For Loop', category: 'flow' },
+      { id: 'flow4', label: 'While Loop', category: 'flow' },
     ],
     2: [ // Conditional Statements
-      { id: 'cond1', label: 'If Condition' },
-      { id: 'cond2', label: 'If-Else' },
+      { id: 'cond1', label: 'If', category: 'conditionals' },
+      { id: 'cond2', label: 'Elif', category: 'conditionals' },
+      { id: 'cond3', label: 'Else', category: 'conditionals' },
     ],
     3: [ // Maths
-      { id: 'math1', label: 'Add' },
-      { id: 'math2', label: 'Multiply' },
+      { id: 'math1', label: 'Add', category: 'math' },
+      { id: 'math2', label: 'Subtract', category: 'math' },
+      { id: 'math3', label: 'Multiply', category: 'math' },
+      { id: 'math4', label: 'Divide', category: 'math' },
     ],
     4: [ // Functions
-      { id: 'func1', label: 'Define Function' },
-      { id: 'func2', label: 'Call Function' },
+      { id: 'func1', label: 'Create Function', category: 'functions' },
+      { id: 'func2', label: 'Call Function', category: 'functions' },
     ],
   };
 
@@ -55,6 +96,7 @@ function ProblemToolKit() {
             key={label}
             label={label}
             sx={{
+                fontWeight: 500,
               color: activeTab === index
                 ? tabStyles[index].activeColor
                 : (tabStyles[index].inactiveColor + '80'),
@@ -74,9 +116,16 @@ function ProblemToolKit() {
         ))}
       </Tabs>
 
-      <Box sx={{ flexGrow: 1, p: 2, overflowX: 'auto', whiteSpace: 'nowrap' }}>
+      <Box sx={{
+          flexGrow: 1,
+          p: 2,
+          display: 'flex',
+          flexDirection: 'row', // Change the direction to row for horizontal layout
+          overflowX: 'auto', // Horizontal scrolling
+          whiteSpace: 'nowrap', 
+        }}>
         {blocks[activeTab].map((block) => (
-          <DraggableBlock key={block.id} id={block.id} label={block.label} />
+          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} />
         ))}
       </Box>
     </Box>
