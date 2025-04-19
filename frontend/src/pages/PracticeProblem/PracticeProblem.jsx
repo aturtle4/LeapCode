@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Box, Typography, IconButton, Button, Tab, Tabs } from "@mui/material";
+import { Box, Typography, IconButton, Button, Tabs, Tab } from "@mui/material";
 import { ArrowBack, PlayArrow, CheckCircle, AccountCircle } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
+import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
+import { DndContext } from '@dnd-kit/core';
 
 function PracticeProblem({ darkMode }) {
   const navigate = useNavigate();
@@ -12,8 +14,26 @@ function PracticeProblem({ darkMode }) {
   const handleTabChange = (event, newIndex) => {
     setTabIndex(newIndex);
   };
+  const [droppedBlocks, setDroppedBlocks] = useState([]);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    
+    // Make sure the drop target is valid
+    if (over && over.id === 'droppable-area') {
+      const newBlock = {
+        id: `${active.id}-${Date.now()}`, // unique ID for each block
+        label: active.data?.current?.label || active.id, // get the label from the active item
+      };
+      
+      // Append the new block to the dropped blocks array
+      setDroppedBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+    }
+  };
+  
 
   return (
+    <DndContext onDragEnd={handleDragEnd}>
     <Box
       sx={{
         minHeight: "100vh",
@@ -39,7 +59,7 @@ function PracticeProblem({ darkMode }) {
             <ArrowBack sx={{ color: darkMode ? "#d7d7d6" : "#403f3f" }} />
           </IconButton>
           <Typography variant="h6" fontWeight="bold">
-            {`${problemName}`}
+            {`Problem List > ${problemName}`}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -80,7 +100,7 @@ function PracticeProblem({ darkMode }) {
             height: "100%",
             backgroundColor: darkMode ? "#353535" : "#ffffff",
             color: darkMode ? "#d7d7d6" : "#403f3f",
-            borderRadius: "15px 0 0 15px",
+            borderRadius: "15px",
             overflow: "hidden",
             transition: "transform 0.2s ease-in-out",
             "&:hover": { transform: "scale(1.02)" },
@@ -134,22 +154,24 @@ function PracticeProblem({ darkMode }) {
           <Box
             sx={{
               flexGrow: 1,
-              backgroundColor: darkMode ? "#353535" : "#ffffff",
-              borderRadius: "0 15px 0 0",
+              backgroundImage: `radial-gradient(circle, rgba(77, 77, 77, 0.55) 1px, transparent 1px)`,
+              backgroundSize: "20px 20px",
+              backgroundColor: darkMode ? "#2c2c2c" : "#f0f0f0",
+              borderRadius: "15px",
               p: 4,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Typography>Main content area (e.g., code editor/output)</Typography>
+            <ProblemRightDraggableArea droppedBlocks= {droppedBlocks}/>
           </Box>
           {/* Toolkit Component */}
           <Box
             sx={{
-              height: "25%",
+              height: "30%",
               backgroundColor: darkMode ? "#353535" : "#ffffff",
-              borderRadius: "0 0 15px 0",
+              borderRadius: "15px",
               p: 2,
             }}
           >
@@ -158,6 +180,7 @@ function PracticeProblem({ darkMode }) {
         </Box>
       </Box>
     </Box>
+    </DndContext>
   );
 }
 
