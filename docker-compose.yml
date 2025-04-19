@@ -21,7 +21,7 @@ services:
       - ./backend:/app
     environment:
       - DATABASE_URL=postgresql://leapcode:leapcode@db:5432/leapcode
-      - SECRET_KEY=your-secret-key-here-change-in-production
+      - SECRET_KEY=14e8907484970b368c95923ac502c07b234e9b52afed1196507660cbe4e7480c
     depends_on:
       - db
       

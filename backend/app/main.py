@@ -1,35 +1,30 @@
-from typing import Optional
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
 
+from app.core.config import settings
+from app.api.routes import auth
+from app.db.database import Base, engine
 
-class User(BaseModel):
-    first_name: str
-    last_name: str
-    age: int
-    email: EmailStr
-    password: str
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION
+)
 
-app = FastAPI()
-
-origins = [
-    "http://localhost:3000",
-]
-
-
+# Setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["authentication"])
 
-@app.post("/signup")
-async def signup(user: User):
-    print(user)
-    return user
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the LeapCode API"}
