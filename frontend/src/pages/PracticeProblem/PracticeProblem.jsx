@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
 import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
 import { DndContext, DragOverlay } from '@dnd-kit/core';
-import { v4 as uuidv4 } from 'uuid';
 
 function PracticeProblem({ darkMode }) {
   const navigate = useNavigate();
@@ -13,6 +12,7 @@ function PracticeProblem({ darkMode }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [droppedBlocks, setDroppedBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
+  const [hoveredBlockId, setHoveredBlockId] = useState(null);
 
   const handleTabChange = (event, newIndex) => {
     setTabIndex(newIndex);
@@ -22,114 +22,148 @@ function PracticeProblem({ darkMode }) {
     const { active, over } = event;
 
     if (!over) {
-      // If dragged item is outside, delete it and its group members
-      setDroppedBlocks((prev) => {
-        const draggedBlock = prev.find((block) => block.id === active.id);
-        if (!draggedBlock) return prev;
-        return prev.filter((block) => block.groupId !== draggedBlock.groupId);
-      });
+      // If dragged item is outside, delete it from the droppedBlocks
+      setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
     } else {
-      // If it's dropped within the valid area, update position or add new block
       const isFromToolkit = active.data.current?.from === 'toolkit';
       const id = active.id;
+      const blockHeight = 30; // Approximate block height
+      const snapDistance = 40; // Distance within which blocks snap vertically
+      const snapXDistance = 40; // Distance within which blocks snap horizontally
 
       setDroppedBlocks((prev) => {
-        const existing = prev.find((block) => block.id === id);
-        const blockHeight = 50; // Approximate block height
-        const snapDistance = 50;
-
-        if (isFromToolkit && !existing) {
+        if (isFromToolkit) {
           // Add new block from toolkit
           const newBlock = { id, label: active.data.current.label, x: 0, y: 0 };
-          // Check for snapping to existing blocks
           let snappedX = newBlock.x;
           let snappedY = newBlock.y;
           let minDistance = Infinity;
-          let snappedGroupId = uuidv4(); // Default new group
 
           prev.forEach((block) => {
             const distanceAbove = Math.abs(newBlock.y - (block.y + blockHeight));
             const distanceBelow = Math.abs(newBlock.y - (block.y - blockHeight));
+            const distanceX = Math.abs(newBlock.x - block.x);
 
-            if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-              snappedY = block.y + blockHeight; // Snap to bottom
-              snappedX = block.x; // Align x
-              snappedGroupId = block.groupId; // Join group
-              minDistance = distanceAbove;
-            }
-            if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-              snappedY = block.y - blockHeight; // Snap to top
-              snappedX = block.x; // Align x
-              snappedGroupId = block.groupId; // Join group
-              minDistance = distanceBelow;
-            }
-          });
-
-          return [...prev, { ...newBlock, x: snappedX, y: snappedY, groupId: snappedGroupId }];
-        }
-
-        if (!isFromToolkit) {
-          // Update position of existing block and its group
-          const draggedBlock = prev.find((block) => block.id === id);
-          if (!draggedBlock) return prev;
-
-          // Move all blocks in the same group
-          const updatedBlocks = prev.map((block) =>
-            block.groupId === draggedBlock.groupId
-              ? {
-                  ...block,
-                  x: block.x + event.delta.x,
-                  y: block.y + event.delta.y,
-                }
-              : block
-          );
-
-          // Apply snapping to the dragged block
-          const movedBlock = updatedBlocks.find((block) => block.id === id);
-          let snappedX = movedBlock.x;
-          let snappedY = movedBlock.y;
-          let minDistance = Infinity;
-          let snappedGroupId = movedBlock.groupId; // Default to current group
-
-          updatedBlocks.forEach((block) => {
-            if (block.groupId !== movedBlock.groupId) {
-              const distanceAbove = Math.abs(movedBlock.y - (block.y + blockHeight));
-              const distanceBelow = Math.abs(movedBlock.y - (block.y - blockHeight));
-
+            if (distanceX <= snapXDistance) {
               if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                snappedY = block.y + blockHeight; // Snap to bottom
-                snappedX = block.x; // Align x
-                snappedGroupId = block.groupId; // Join new group
+                snappedY = block.y + blockHeight; // Snap to bottom of block
+                snappedX = block.x; // Align x to snapped block
                 minDistance = distanceAbove;
               }
               if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                snappedY = block.y - blockHeight; // Snap to top
-                snappedX = block.x; // Align x
-                snappedGroupId = block.groupId; // Join new group
+                snappedY = block.y - blockHeight; // Snap to top of block
+                snappedX = block.x; // Align x to snapped block
                 minDistance = distanceBelow;
               }
             }
           });
 
-          // Update the dragged block's position and group, and move group to new position
-          return updatedBlocks.map((block) =>
-            block.groupId === draggedBlock.groupId
-              ? {
-                  ...block,
-                  x: block.x - movedBlock.x + snappedX, // Adjust x relative to snapped position
-                  y: block.y - movedBlock.y + snappedY, // Adjust y relative to snapped position
-                  groupId: snappedGroupId,
-                }
-              : block
-          );
+          return [...prev, { ...newBlock, x: snappedX, y: snappedY }];
         }
 
-        return prev;
+        // Handle dragging an existing block
+        const movedBlock = prev.find((block) => block.id === id);
+        if (!movedBlock) return prev;
+
+        // Find the group of blocks that are vertically connected
+        const group = [];
+        const visited = new Set();
+        const findGroup = (currentBlock) => {
+          if (visited.has(currentBlock.id)) return;
+          visited.add(currentBlock.id);
+          group.push(currentBlock);
+
+          prev.forEach((block) => {
+            if (block.id !== currentBlock.id) {
+              const distanceAbove = Math.abs(currentBlock.y - (block.y + blockHeight));
+              const distanceBelow = Math.abs(currentBlock.y - (block.y - blockHeight));
+              const distanceX = Math.abs(currentBlock.x - block.x);
+              if ((distanceAbove <= snapDistance || distanceBelow <= snapDistance) && distanceX <= snapXDistance) {
+                findGroup(block);
+              }
+            }
+          });
+        };
+
+        findGroup(movedBlock);
+
+        // Find the topmost block in the group (smallest y-value)
+        const topBlock = group.reduce((top, block) => 
+          !top || block.y < top.y ? block : top, null);
+
+        // If the dragged block is the topmost block, move the entire group
+        if (topBlock && topBlock.id === id) {
+          const deltaX = event.delta.x;
+          const deltaY = event.delta.y;
+
+          // Update positions of all blocks in the group
+          return prev.map((block) => {
+            if (group.some((g) => g.id === block.id)) {
+              let snappedX = block.x + deltaX;
+              let snappedY = block.y + deltaY;
+              let minDistance = Infinity;
+
+              // Apply snapping to other blocks (not in the group)
+              prev.forEach((otherBlock) => {
+                if (!group.some((g) => g.id === otherBlock.id)) {
+                  const distanceAbove = Math.abs(snappedY - (otherBlock.y + blockHeight));
+                  const distanceBelow = Math.abs(snappedY - (otherBlock.y - blockHeight));
+                  const distanceX = Math.abs(snappedX - otherBlock.x);
+
+                  if (distanceX <= snapXDistance) {
+                    if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
+                      snappedY = otherBlock.y + blockHeight;
+                      snappedX = otherBlock.x;
+                      minDistance = distanceAbove;
+                    }
+                    if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
+                      snappedY = otherBlock.y - blockHeight;
+                      snappedX = otherBlock.x;
+                      minDistance = distanceBelow;
+                    }
+                  }
+                }
+              });
+
+              return { ...block, x: snappedX, y: snappedY };
+            }
+            return block;
+          });
+        } else {
+          // If not the top block, only move the dragged block
+          let snappedX = movedBlock.x + event.delta.x;
+          let snappedY = movedBlock.y + event.delta.y;
+          let minDistance = Infinity;
+
+          prev.forEach((block) => {
+            if (block.id !== id) {
+              const distanceAbove = Math.abs(snappedY - (block.y + blockHeight));
+              const distanceBelow = Math.abs(snappedY - (block.y - blockHeight));
+              const distanceX = Math.abs(snappedX - block.x);
+
+              if (distanceX <= snapXDistance) {
+                if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
+                  snappedY = block.y + blockHeight;
+                  snappedX = block.x;
+                  minDistance = distanceAbove;
+                }
+                if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
+                  snappedY = block.y - blockHeight;
+                  snappedX = block.x;
+                  minDistance = distanceBelow;
+                }
+              }
+            }
+          });
+
+          return prev.map((block) =>
+            block.id === id ? { ...block, x: snappedX, y: snappedY } : block
+          );
+        }
       });
     }
     setActiveBlock(null);
   };
-
   return (
     <DndContext
       onDragStart={(event) => {
@@ -249,10 +283,10 @@ function PracticeProblem({ darkMode }) {
               {tabIndex === 1 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Past Submissions</Typography>
-                  <Box sx={{ backgroundColor: "#2b2b2b", borderRadius: "6px", p: 1, mb: 1 }}>
+                  <Box sx={{ backgroundColor: "#fff", borderRadius: "6px", p: 1, mb: 1 }}>
                     <Typography fontSize={13}>✅ Passed • 2025-04-19 • 34ms</Typography>
                   </Box>
-                  <Box sx={{ backgroundColor: "#2b2b2b", borderRadius: "6px", p: 1 }}>
+                  <Box sx={{ backgroundColor: "#fff", borderRadius: "6px", p: 1 }}>
                     <Typography fontSize={13}>❌ Failed • 2025-04-19 • Test Case 2 Failed</Typography>
                   </Box>
                 </Box>

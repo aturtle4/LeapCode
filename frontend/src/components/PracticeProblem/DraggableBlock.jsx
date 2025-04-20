@@ -41,3 +41,5 @@ function DraggableBlock({ block, onPositionChange }) {
     </div>
   );
 }
+
+export default DraggableBlock;
