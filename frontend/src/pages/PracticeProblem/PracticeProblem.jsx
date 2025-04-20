@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
 import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
 import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { v4 as uuidv4 } from 'uuid';
 
 function PracticeProblem({ darkMode }) {
   const navigate = useNavigate();
@@ -21,8 +22,12 @@ function PracticeProblem({ darkMode }) {
     const { active, over } = event;
 
     if (!over) {
-      // If dragged item is outside, delete it from the droppedBlocks
-      setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
+      // If dragged item is outside, delete it and its group members
+      setDroppedBlocks((prev) => {
+        const draggedBlock = prev.find((block) => block.id === active.id);
+        if (!draggedBlock) return prev;
+        return prev.filter((block) => block.groupId !== draggedBlock.groupId);
+      });
     } else {
       // If it's dropped within the valid area, update position or add new block
       const isFromToolkit = active.data.current?.from === 'toolkit';
@@ -40,30 +45,37 @@ function PracticeProblem({ darkMode }) {
           let snappedX = newBlock.x;
           let snappedY = newBlock.y;
           let minDistance = Infinity;
+          let snappedGroupId = uuidv4(); // Default new group
 
           prev.forEach((block) => {
             const distanceAbove = Math.abs(newBlock.y - (block.y + blockHeight));
             const distanceBelow = Math.abs(newBlock.y - (block.y - blockHeight));
 
             if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-              snappedY = block.y + blockHeight; // Snap to bottom of block
-              snappedX = block.x; // Align x to snapped block
+              snappedY = block.y + blockHeight; // Snap to bottom
+              snappedX = block.x; // Align x
+              snappedGroupId = block.groupId; // Join group
               minDistance = distanceAbove;
             }
             if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-              snappedY = block.y - blockHeight; // Snap to top of block
-              snappedX = block.x; // Align x to snapped block
+              snappedY = block.y - blockHeight; // Snap to top
+              snappedX = block.x; // Align x
+              snappedGroupId = block.groupId; // Join group
               minDistance = distanceBelow;
             }
           });
 
-          return [...prev, { ...newBlock, x: snappedX, y: snappedY }];
+          return [...prev, { ...newBlock, x: snappedX, y: snappedY, groupId: snappedGroupId }];
         }
 
         if (!isFromToolkit) {
-          // Update position of existing block
+          // Update position of existing block and its group
+          const draggedBlock = prev.find((block) => block.id === id);
+          if (!draggedBlock) return prev;
+
+          // Move all blocks in the same group
           const updatedBlocks = prev.map((block) =>
-            block.id === id
+            block.groupId === draggedBlock.groupId
               ? {
                   ...block,
                   x: block.x + event.delta.x,
@@ -72,32 +84,43 @@ function PracticeProblem({ darkMode }) {
               : block
           );
 
-          // Apply snapping to the moved block
+          // Apply snapping to the dragged block
           const movedBlock = updatedBlocks.find((block) => block.id === id);
           let snappedX = movedBlock.x;
           let snappedY = movedBlock.y;
           let minDistance = Infinity;
+          let snappedGroupId = movedBlock.groupId; // Default to current group
 
           updatedBlocks.forEach((block) => {
-            if (block.id !== id) {
+            if (block.groupId !== movedBlock.groupId) {
               const distanceAbove = Math.abs(movedBlock.y - (block.y + blockHeight));
               const distanceBelow = Math.abs(movedBlock.y - (block.y - blockHeight));
 
               if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                snappedY = block.y + blockHeight; // Snap to bottom of block
-                snappedX = block.x; // Align x to snapped block
+                snappedY = block.y + blockHeight; // Snap to bottom
+                snappedX = block.x; // Align x
+                snappedGroupId = block.groupId; // Join new group
                 minDistance = distanceAbove;
               }
               if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                snappedY = block.y - blockHeight; // Snap to top of block
-                snappedX = block.x; // Align x to snapped block
+                snappedY = block.y - blockHeight; // Snap to top
+                snappedX = block.x; // Align x
+                snappedGroupId = block.groupId; // Join new group
                 minDistance = distanceBelow;
               }
             }
           });
 
+          // Update the dragged block's position and group, and move group to new position
           return updatedBlocks.map((block) =>
-            block.id === id ? { ...block, x: snappedX, y: snappedY } : block
+            block.groupId === draggedBlock.groupId
+              ? {
+                  ...block,
+                  x: block.x - movedBlock.x + snappedX, // Adjust x relative to snapped position
+                  y: block.y - movedBlock.y + snappedY, // Adjust y relative to snapped position
+                  groupId: snappedGroupId,
+                }
+              : block
           );
         }
 
