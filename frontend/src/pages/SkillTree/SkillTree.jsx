@@ -14,6 +14,11 @@ import {
   Menu,
   MenuItem,
   Fab,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -24,6 +29,8 @@ import {
   MoreVert,
   LinkOff,
   Add,
+  Edit,
+  Delete,
 } from "@mui/icons-material";
 import { googleClassroomAPI } from "../../services/googleClassroomAPI";
 import { skillTreeAPI } from "../../services/skillTreeAPI";
@@ -42,13 +49,24 @@ function SkillTree({ darkMode, toggleDarkMode }) {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("info");
 
-  // New state for node form
+  // Node form states
   const [nodeFormOpen, setNodeFormOpen] = useState(false);
+  const [editNodeData, setEditNodeData] = useState(null);
+  const [editNodeIndex, setEditNodeIndex] = useState(null);
 
-  // New state for classroom linking
+  // Node deletion states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [nodeToDelete, setNodeToDelete] = useState(null);
+
+  // Node action menu
+  const [nodeMenuAnchorEl, setNodeMenuAnchorEl] = useState(null);
+  const [selectedNodeIndex, setSelectedNodeIndex] = useState(null);
+
+  // Classroom linking states
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
+  const nodeMenuOpen = Boolean(nodeMenuAnchorEl);
 
   // Fetch skill tree data and associated Google Classroom on component mount
   useEffect(() => {
@@ -110,6 +128,75 @@ function SkillTree({ darkMode, toggleDarkMode }) {
     setSnackbarMessage("New learning node added successfully!");
     setSnackbarSeverity("success");
     setOpenSnackbar(true);
+  };
+
+  // Handle node updates
+  const handleNodeUpdated = (updatedSkillTree) => {
+    setSkillTree(updatedSkillTree);
+    setEditNodeData(null);
+    setEditNodeIndex(null);
+    setSnackbarMessage("Node updated successfully!");
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
+  };
+
+  // Handle node menu open
+  const handleNodeMenuOpen = (event, index) => {
+    event.stopPropagation();
+    setNodeMenuAnchorEl(event.currentTarget);
+    setSelectedNodeIndex(index);
+  };
+
+  // Handle node menu close
+  const handleNodeMenuClose = () => {
+    setNodeMenuAnchorEl(null);
+    setSelectedNodeIndex(null);
+  };
+
+  // Handle node edit
+  const handleEditNode = () => {
+    const nodeToEdit = skillTree.nodes[selectedNodeIndex];
+    setEditNodeData(nodeToEdit);
+    setEditNodeIndex(selectedNodeIndex);
+    setNodeFormOpen(true);
+    handleNodeMenuClose();
+  };
+
+  // Handle node delete click
+  const handleDeleteNodeClick = () => {
+    setNodeToDelete(selectedNodeIndex);
+    setDeleteDialogOpen(true);
+    handleNodeMenuClose();
+  };
+
+  // Handle node delete confirmation
+  const confirmDeleteNode = async () => {
+    if (nodeToDelete === null) return;
+
+    try {
+      // Create a copy of nodes array without the node to delete
+      const updatedNodes = [...skillTree.nodes];
+      updatedNodes.splice(nodeToDelete, 1);
+
+      // Update skill tree with the new nodes array
+      const result = await skillTreeAPI.updateSkillTree(id, {
+        ...skillTree,
+        nodes: updatedNodes,
+      });
+
+      setSkillTree(result);
+      setSnackbarMessage("Node deleted successfully");
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+    } catch (err) {
+      console.error("Failed to delete node:", err);
+      setSnackbarMessage("Failed to delete node");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+    } finally {
+      setDeleteDialogOpen(false);
+      setNodeToDelete(null);
+    }
   };
 
   if (loading) {
@@ -328,9 +415,51 @@ function SkillTree({ darkMode, toggleDarkMode }) {
                   color: darkMode ? "#d7d7d6" : "#403f3f",
                 }}
               >
-                <Typography variant="h6" fontWeight="bold">
-                  {node.title || `Node ${nodeIndex + 1}`}
-                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography variant="h6" fontWeight="bold">
+                    {node.title || `Node ${nodeIndex + 1}`}
+                  </Typography>
+                  <IconButton
+                    onClick={(event) => handleNodeMenuOpen(event, nodeIndex)}
+                  >
+                    <MoreVert
+                      style={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
+                    />
+                  </IconButton>
+                </Box>
+
+                <Menu
+                  anchorEl={nodeMenuAnchorEl}
+                  open={nodeMenuOpen}
+                  onClose={handleNodeMenuClose}
+                  PaperProps={{
+                    sx: {
+                      backgroundColor: darkMode ? "#424242" : "#ffffff",
+                      color: darkMode ? "#d7d7d6" : "#403f3f",
+                    },
+                  }}
+                >
+                  <MenuItem
+                    onClick={handleEditNode}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <Edit fontSize="small" />
+                    Edit Node
+                  </MenuItem>
+                  <MenuItem
+                    onClick={handleDeleteNodeClick}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <Delete fontSize="small" />
+                    Delete Node
+                  </MenuItem>
+                </Menu>
 
                 {node.steps.map((step, stepIndex) => (
                   <Box key={stepIndex} sx={{ mt: 2 }}>
@@ -497,11 +626,39 @@ function SkillTree({ darkMode, toggleDarkMode }) {
         {/* Node form modal */}
         <NodeForm
           open={nodeFormOpen}
-          onClose={() => setNodeFormOpen(false)}
+          onClose={() => {
+            setNodeFormOpen(false);
+            setEditNodeData(null);
+            setEditNodeIndex(null);
+          }}
           skillTreeId={id}
           darkMode={darkMode}
-          onSuccess={handleNodeAdded}
+          onSuccess={editNodeData ? handleNodeUpdated : handleNodeAdded}
+          editData={editNodeData}
+          nodeIndex={editNodeIndex}
         />
+
+        {/* Node delete confirmation dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">Delete Node</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              Are you sure you want to delete this node? This action cannot be
+              undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmDeleteNode} color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </div>
   );

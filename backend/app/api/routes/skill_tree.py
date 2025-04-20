@@ -91,6 +91,10 @@ async def update_skill_tree(
     skill_tree.guide = skill_tree_in.guide
     skill_tree.bg_color = skill_tree_in.bg_color or skill_tree.bg_color
 
+    # Update nodes if they are provided
+    if skill_tree_in.nodes is not None:
+        skill_tree.nodes = skill_tree_in.nodes
+
     db.commit()
     db.refresh(skill_tree)
 

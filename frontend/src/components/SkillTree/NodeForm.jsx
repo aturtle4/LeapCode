@@ -28,9 +28,18 @@ const STEP_TYPES = [
   { value: "problem", label: "Practice Problem" },
 ];
 
-const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
+const NodeForm = ({
+  open,
+  onClose,
+  darkMode,
+  skillTreeId,
+  onSuccess,
+  editData = null,
+  nodeIndex = null,
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const isEditMode = !!editData;
 
   // Form data state with one initial step
   const [formData, setFormData] = useState({
@@ -44,22 +53,45 @@ const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
     ],
   });
 
-  // Reset form when dialog opens or closes
+  // Reset form when dialog opens or closes, or when editData changes
   React.useEffect(() => {
     if (open) {
-      setFormData({
-        title: "",
-        steps: [
-          {
-            title: "",
-            type: "text",
-            content: "",
-          },
-        ],
-      });
+      if (editData) {
+        // If editing an existing node, initialize with its data
+        setFormData({
+          title: editData.title || "",
+          steps:
+            editData.steps && editData.steps.length > 0
+              ? editData.steps.map((step) => ({
+                  title: step.title || "",
+                  type: step.type || "text",
+                  content: step.content || "",
+                  id: step.id, // Preserve the original ID if it exists
+                }))
+              : [
+                  {
+                    title: "",
+                    type: "text",
+                    content: "",
+                  },
+                ],
+        });
+      } else {
+        // If adding a new node, reset to empty form
+        setFormData({
+          title: "",
+          steps: [
+            {
+              title: "",
+              type: "text",
+              content: "",
+            },
+          ],
+        });
+      }
       setError(null);
     }
-  }, [open]);
+  }, [open, editData]);
 
   const handleTitleChange = (e) => {
     setFormData({
@@ -139,8 +171,38 @@ const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
       // Get current skill tree data
       const skillTree = await skillTreeAPI.getSkillTree(skillTreeId);
 
-      // Append new node to existing nodes array
-      const updatedNodes = [...(skillTree.nodes || []), formData];
+      // Make sure nodes is an array even if it's null or undefined
+      const currentNodes = Array.isArray(skillTree.nodes)
+        ? skillTree.nodes
+        : [];
+
+      // Create a properly formatted node object
+      const nodeData = {
+        title: formData.title,
+        steps: formData.steps.map((step) => ({
+          title: step.title,
+          type: step.type,
+          content: step.content,
+          id:
+            step.id ||
+            `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID if not exists
+        })),
+      };
+
+      let updatedNodes;
+
+      if (isEditMode && nodeIndex !== null) {
+        // Edit existing node
+        updatedNodes = [...currentNodes];
+        updatedNodes[nodeIndex] = nodeData;
+        console.log("Editing node at index:", nodeIndex);
+      } else {
+        // Add new node
+        updatedNodes = [...currentNodes, nodeData];
+        console.log("Adding new node");
+      }
+
+      console.log("Updated nodes:", updatedNodes);
 
       // Update skill tree with new nodes array
       const result = await skillTreeAPI.updateSkillTree(skillTreeId, {
@@ -154,8 +216,8 @@ const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
 
       onClose();
     } catch (err) {
-      console.error("Error adding node:", err);
-      setError(err.detail || "Failed to add node. Please try again.");
+      console.error("Error saving node:", err);
+      setError(err.detail || "Failed to save node. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -183,7 +245,9 @@ const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
         },
       }}
     >
-      <DialogTitle>Add New Learning Node</DialogTitle>
+      <DialogTitle>
+        {isEditMode ? "Edit Learning Node" : "Add New Learning Node"}
+      </DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -381,13 +445,21 @@ const NodeForm = ({ open, onClose, darkMode, skillTreeId, onSuccess }) => {
           onClick={handleSubmit}
           disabled={loading}
           variant="contained"
-          startIcon={loading ? <CircularProgress size={20} /> : <Save />}
+          startIcon={
+            loading ? (
+              <CircularProgress size={20} />
+            ) : isEditMode ? (
+              <Save />
+            ) : (
+              <Add />
+            )
+          }
           sx={{
             backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
             "&:hover": { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
           }}
         >
-          {loading ? "Saving..." : "Save Node"}
+          {loading ? "Saving..." : isEditMode ? "Update Node" : "Save Node"}
         </Button>
       </DialogActions>
     </Dialog>

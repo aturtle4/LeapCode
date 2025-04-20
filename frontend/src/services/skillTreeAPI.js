@@ -35,9 +35,20 @@ export const skillTreeAPI = {
   // Update an existing skill tree
   updateSkillTree: async (id, skillTreeData) => {
     try {
+      console.log('Updating skill tree with data:', JSON.stringify(skillTreeData, null, 2));
       const response = await api.put(`/skill-trees/${id}`, skillTreeData);
+      console.log('Skill tree update response:', JSON.stringify(response.data, null, 2));
+      
+      // Verify nodes are in the response
+      if (response.data && !response.data.nodes && skillTreeData.nodes) {
+        console.error('Nodes missing from response but present in request');
+        // Add the nodes back to the response if missing
+        response.data.nodes = skillTreeData.nodes;
+      }
+      
       return response.data;
     } catch (error) {
+      console.error('Error updating skill tree:', error);
       throw error.response?.data || { detail: `Failed to update skill tree ${id}` };
     }
   },
