@@ -1,59 +1,38 @@
 import React from 'react';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { backdropClasses } from '@mui/material';
-import DraggableBlock from './DraggableBlock';
-
-// function DraggableBlock({ block, onPositionChange }) {
-//   const {
-//     attributes,
-//     listeners,
-//     setNodeRef,
-//     transform,
-//     isDragging,
-//   } = useDraggable({
-//     id: block.id,
-//     data: {
-//       ...block,
-//       from: 'rightArea', // Mark it as coming from the right area
-//     },
-//   });
-
-//   const style = {
-//     position: 'absolute',
-//     left: transform ? block.x + transform.x : block.x,
-//     top: transform ? block.y + transform.y : block.y,
-//     padding: '8px',
-//     backgroundColor: isDragging ? '#66bb6a' : '#4CAF50',
-//     color: 'white',
-//     maxWidth: '120px',
-//     width: '100%',
-//     borderRadius: '5px',
-//     cursor: 'grab',
-//     transition: isDragging ? 'none' : 'transform 0.2s ease',
-//   };
-
-//   return (
-//     <div
-//       ref={setNodeRef}
-//       style={style}
-//       {...listeners}
-//       {...attributes}
-//     >
-//       {block.label}
-//     </div>
-//   );
-// }
+import { useDroppable } from '@dnd-kit/core';
+import BlockFactory from '../Blocks/BlockFactory';
 
 function ProblemRightDraggableArea({ droppedBlocks }) {
   const { setNodeRef } = useDroppable({
     id: 'droppable-area',
   });
 
+  const renderBlock = (block) => (
+    <BlockFactory key={block.id} block={block}>
+      {block.children && block.children.length > 0 && (
+        <div style={{ position: 'relative' }}>
+          {block.children.map((child) => (
+            <div
+              key={child.id}
+              style={{
+                position: 'absolute',
+                left: child.x,
+                top: child.y,
+              }}
+            >
+              {renderBlock(child)}
+            </div>
+          ))}
+        </div>
+      )}
+    </BlockFactory>
+  );
+
   return (
     <div
       ref={setNodeRef}
       style={{
-        position: 'relative', // Required for absolute children
+        position: 'relative',
         height: '100%',
         width: '100%',
         borderRadius: '10px',
@@ -61,14 +40,11 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
       }}
     >
       {droppedBlocks.length > 0 ? (
-        droppedBlocks.map((block) => (
-          <DraggableBlock
-            key={block.id}
-            block={block}
-          />
-        ))
+        droppedBlocks
+          .filter((block) => !block.parentId)
+          .map((block) => renderBlock(block))
       ) : (
-        <p></p>
+        <p style={{ color: '#888', textAlign: 'center' }}>Drop blocks here</p>
       )}
     </div>
   );

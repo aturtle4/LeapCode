@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
 import { useDraggable } from '@dnd-kit/core';
 
-// Draggable Block Component
-const ToolkitBlock = ({ id, label, category }) => {
+const ToolkitBlock = ({ id, label, category, type, canNest, color }) => {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
     data: {
       label,
-      category, // Add category to data for better management
-      from: 'toolkit', // Mark that it comes from the toolkit
+      category,
+      type,
+      canNest,
+      color,
+      from: 'toolkit',
     },
   });
 
@@ -20,7 +22,7 @@ const ToolkitBlock = ({ id, label, category }) => {
       {...attributes}
       style={{
         padding: '10px 16px',
-        backgroundColor: '#7B61FF',
+        backgroundColor: color || '#7B61FF',
         color: 'white',
         marginBottom: '12px',
         marginRight: '12px',
@@ -44,40 +46,40 @@ function ProblemToolKit() {
   };
 
   const tabStyles = [
-    { activeColor: '#27AE60', inactiveColor: '#27AE60', hoverColor: '#2ECC71' }, // Variables
-    { activeColor: '#3498DB', inactiveColor: '#3498DB', hoverColor: '#5DADE2' }, // Flow
-    { activeColor: '#E74C3C', inactiveColor: '#E74C3C', hoverColor: '#EC7063' }, // Conditional Statements
-    { activeColor: '#F1C40F', inactiveColor: '#F1C40F', hoverColor: '#F4D03F' }, // Maths
-    { activeColor: '#9B59B6', inactiveColor: '#9B59B6', hoverColor: '#AF7AC5' }, // Functions
+    { activeColor: '#27AE60', inactiveColor: '#27AE60', hoverColor: '#2ECC71' },
+    { activeColor: '#3498DB', inactiveColor: '#3498DB', hoverColor: '#5DADE2' },
+    { activeColor: '#E74C3C', inactiveColor: '#E74C3C', hoverColor: '#EC7063' },
+    { activeColor: '#F1C40F', inactiveColor: '#F1C40F', hoverColor: '#F4D03F' },
+    { activeColor: '#9B59B6', inactiveColor: '#9B59B6', hoverColor: '#AF7AC5' },
   ];
 
   const blocks = {
-    0: [ // Variables
-      { id: 'var1', label: 'Set Variable', category: 'variables' },
-      { id: 'var2', label: 'Change Variable', category: 'variables' },
-      { id: 'var3', label: 'Use Variable', category: 'variables' },
-      { id: 'var4', label: 'Set Variable Again', category: 'variables' },
+    0: [
+      { id: 'var1', label: 'Set Variable', category: 'variables', type: 'setVariable', canNest: false, color: '#27AE60' },
+      { id: 'var2', label: 'Change Variable', category: 'variables', type: 'changeVariable', canNest: false, color: '#27AE60' },
+      { id: 'var3', label: 'Use Variable', category: 'variables', type: 'useVariable', canNest: false, color: '#27AE60' },
+      { id: 'var4', label: 'Set Variable Again', category: 'variables', type: 'setVariable', canNest: false, color: '#27AE60' },
     ],
-    1: [ // Flow
-      { id: 'flow1', label: 'Start', category: 'flow' },
-      { id: 'flow2', label: 'End', category: 'flow' },
-      { id: 'flow3', label: 'For Loop', category: 'flow' },
-      { id: 'flow4', label: 'While Loop', category: 'flow' },
+    1: [
+      { id: 'flow1', label: 'Start', category: 'flow', type: 'start', canNest: false, color: '#3498DB' },
+      { id: 'flow2', label: 'End', category: 'flow', type: 'end', canNest: false, color: '#3498DB' },
+      { id: 'flow3', label: 'For Loop', category: 'flow', type: 'forLoop', canNest: true, color: '#3498DB' },
+      { id: 'flow4', label: 'While Loop', category: 'flow', type: 'whileLoop', canNest: true, color: '#3498DB' },
     ],
-    2: [ // Conditional Statements
-      { id: 'cond1', label: 'If', category: 'conditionals' },
-      { id: 'cond2', label: 'Elif', category: 'conditionals' },
-      { id: 'cond3', label: 'Else', category: 'conditionals' },
+    2: [
+      { id: 'cond1', label: 'If', category: 'conditionals', type: 'if', canNest: true, color: '#E74C3C' },
+      { id: 'cond2', label: 'Elif', category: 'conditionals', type: 'elif', canNest: true, color: '#E74C3C' },
+      { id: 'cond3', label: 'Else', category: 'conditionals', type: 'else', canNest: true, color: '#E74C3C' },
     ],
-    3: [ // Maths
-      { id: 'math1', label: 'Add', category: 'math' },
-      { id: 'math2', label: 'Subtract', category: 'math' },
-      { id: 'math3', label: 'Multiply', category: 'math' },
-      { id: 'math4', label: 'Divide', category: 'math' },
+    3: [
+      { id: 'math1', label: 'Add', category: 'math', type: 'add', canNest: false, color: '#F1C40F' },
+      { id: 'math2', label: 'Subtract', category: 'math', type: 'subtract', canNest: false, color: '#F1C40F' },
+      { id: 'math3', label: 'Multiply', category: 'math', type: 'multiply', canNest: false, color: '#F1C40F' },
+      { id: 'math4', label: 'Divide', category: 'math', type: 'divide', canNest: false, color: '#F1C40F' },
     ],
-    4: [ // Functions
-      { id: 'func1', label: 'Create Function', category: 'functions' },
-      { id: 'func2', label: 'Call Function', category: 'functions' },
+    4: [
+      { id: 'func1', label: 'Create Function', category: 'functions', type: 'createFunction', canNest: true, color: '#9B59B6' },
+      { id: 'func2', label: 'Call Function', category: 'functions', type: 'callFunction', canNest: false, color: '#9B59B6' },
     ],
   };
 
@@ -96,10 +98,11 @@ function ProblemToolKit() {
             key={label}
             label={label}
             sx={{
-                fontWeight: 500,
+              fontWeight: 500,
               color: activeTab === index
                 ? tabStyles[index].activeColor
-                : (tabStyles[index].inactiveColor + '80'),
+                : tabStyles[index].inactiveColor + '80',
+
               backgroundColor: activeTab === index
                 ? tabStyles[index].activeColor + '20'
                 : 'transparent',
@@ -117,15 +120,23 @@ function ProblemToolKit() {
       </Tabs>
 
       <Box sx={{
-          flexGrow: 1,
-          p: 2,
-          display: 'flex',
-          flexDirection: 'row', // Change the direction to row for horizontal layout
-          overflowX: 'auto', // Horizontal scrolling
-          whiteSpace: 'nowrap', 
-        }}>
+        flexGrow: 1,
+        p: 2,
+        display: 'flex',
+        flexDirection: 'row',
+        overflowX: 'auto',
+        whiteSpace: 'nowrap',
+      }}>
         {blocks[activeTab].map((block) => (
-          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} />
+          <ToolkitBlock
+            key={block.id}
+            id={block.id}
+            label={block.label}
+            category={block.category}
+            type={block.type}
+            canNest={block.canNest}
+            color={block.color}
+          />
         ))}
       </Box>
     </Box>

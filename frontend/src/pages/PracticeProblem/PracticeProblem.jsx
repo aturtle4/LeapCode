@@ -12,7 +12,6 @@ function PracticeProblem({ darkMode }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [droppedBlocks, setDroppedBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
-  const [hoveredBlockId, setHoveredBlockId] = useState(null);
 
   const handleTabChange = (event, newIndex) => {
     setTabIndex(newIndex);
@@ -22,148 +21,232 @@ function PracticeProblem({ darkMode }) {
     const { active, over } = event;
 
     if (!over) {
-      // If dragged item is outside, delete it from the droppedBlocks
       setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
-    } else {
-      const isFromToolkit = active.data.current?.from === 'toolkit';
-      const id = active.id;
-      const blockHeight = 30; // Approximate block height
-      const snapDistance = 40; // Distance within which blocks snap vertically
-      const snapXDistance = 40; // Distance within which blocks snap horizontally
+      return;
+    }
 
-      setDroppedBlocks((prev) => {
-        if (isFromToolkit) {
-          // Add new block from toolkit
-          const newBlock = { id, label: active.data.current.label, x: 0, y: 0 };
-          let snappedX = newBlock.x;
-          let snappedY = newBlock.y;
-          let minDistance = Infinity;
+    const isFromToolkit = active.data.current?.from === 'toolkit';
+    const id = active.id;
+    const blockHeight = 30;
+    const snapDistance = 40;
+    const snapXDistance = 50;
 
-          prev.forEach((block) => {
-            const distanceAbove = Math.abs(newBlock.y - (block.y + blockHeight));
-            const distanceBelow = Math.abs(newBlock.y - (block.y - blockHeight));
-            const distanceX = Math.abs(newBlock.x - block.x);
+    setDroppedBlocks((prev) => {
+      if (isFromToolkit) {
+        const newBlock = {
+          id: `${active.data.current.category}-${Date.now()}`,
+          label: active.data.current.label,
+          type: active.data.current.type,
+          category: active.data.current.category,
+          color: active.data.current.color,
+          x: 0,
+          y: 0,
+          children: active.data.current.canNest ? [] : null,
+          canNest: active.data.current.canNest || false,
+        };
+        let snappedX = newBlock.x;
+        let snappedY = newBlock.y;
+        let minDistance = Infinity;
+        let parentBlock = null;
+
+        // Check for nesting
+        prev.forEach((block) => {
+          if (block.canNest && block.children) {
+            const nestingAreaTop = block.y + 40; // Top section ~40px
+            const nestingAreaBottom = block.y + 40 + (block.children ? block.children.length * 40 + 50 : 50);
+            const nestingAreaLeft = block.x + 12;
+            const nestingAreaRight = block.x + 220 - 12;
+
+            if (
+              snappedX >= nestingAreaLeft &&
+              snappedX <= nestingAreaRight &&
+              snappedY >= nestingAreaTop &&
+              snappedY <= nestingAreaBottom
+            ) {
+              parentBlock = block;
+              snappedX = snappedX - block.x;
+              snappedY = snappedY - nestingAreaTop;
+            }
+          }
+        });
+
+        if (parentBlock) {
+          return prev.map((block) =>
+            block.id === parentBlock.id
+              ? {
+                  ...block,
+                  children: [
+                    ...block.children,
+                    { ...newBlock, x: snappedX, y: snappedY, parentId: parentBlock.id },
+                  ],
+                }
+              : block
+          );
+        }
+
+        // Snap to other blocks
+        prev.forEach((block) => {
+          const distanceAbove = Math.abs(newBlock.y - (block.y + blockHeight));
+          const distanceBelow = Math.abs(newBlock.y - (block.y - blockHeight));
+          const distanceX = Math.abs(newBlock.x - block.x);
+
+          if (distanceX <= snapXDistance) {
+            if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
+              snappedY = block.y + blockHeight;
+              snappedX = block.x;
+              minDistance = distanceAbove;
+            }
+            if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
+              snappedY = block.y - blockHeight;
+              snappedX = block.x;
+              minDistance = distanceBelow;
+            }
+          }
+        });
+
+        return [...prev, { ...newBlock, x: snappedX, y: snappedY }];
+      }
+
+      // Handle dragging existing blocks
+      const movedBlock = prev.find((block) => block.id === id);
+      if (!movedBlock) return prev;
+
+      const group = [];
+      const visited = new Set();
+      const findGroup = (currentBlock) => {
+        if (visited.has(currentBlock.id)) return;
+        visited.add(currentBlock.id);
+        group.push(currentBlock);
+
+        prev.forEach((block) => {
+          if (block.id !== currentBlock.id) {
+            const distanceAbove = Math.abs(currentBlock.y - (block.y + blockHeight));
+            const distanceBelow = Math.abs(currentBlock.y - (block.y - blockHeight));
+            const distanceX = Math.abs(currentBlock.x - block.x);
+            if ((distanceAbove <= snapDistance || distanceBelow <= snapDistance) && distanceX <= snapXDistance) {
+              findGroup(block);
+            }
+          }
+        });
+      };
+
+      findGroup(movedBlock);
+
+      const topBlock = group.reduce((top, block) => (!top || block.y < top.y ? block : top), null);
+
+      if (topBlock && topBlock.id === id) {
+        const deltaX = event.delta.x;
+        const deltaY = event.delta.y;
+
+        let newParentBlock = null;
+        let snappedX = movedBlock.x + deltaX;
+        let snappedY = movedBlock.y + deltaY;
+
+        let minDistance = Infinity;
+        prev.forEach((block) => {
+          if (block.canNest && block.children && block.id !== id) {
+            const nestingAreaTop = block.y + 40;
+            const nestingAreaBottom = block.y + 40 + (block.children ? block.children.length * 40 + 50 : 50);
+            const nestingAreaLeft = block.x + 12;
+            const nestingAreaRight = block.x + 220 - 12;
+
+            if (
+              snappedX >= nestingAreaLeft &&
+              snappedX <= nestingAreaRight &&
+              snappedY >= nestingAreaTop &&
+              snappedY <= nestingAreaBottom
+            ) {
+              newParentBlock = block;
+              snappedX = snappedX - block.x;
+              snappedY = snappedY - nestingAreaTop;
+            }
+          } else {
+            const distanceAbove = Math.abs(snappedY - (block.y + blockHeight));
+            const distanceBelow = Math.abs(snappedY - (block.y - blockHeight));
+            const distanceX = Math.abs(snappedX - block.x);
 
             if (distanceX <= snapXDistance) {
               if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                snappedY = block.y + blockHeight; // Snap to bottom of block
-                snappedX = block.x; // Align x to snapped block
+                snappedY = block.y + blockHeight;
+                snappedX = block.x;
                 minDistance = distanceAbove;
               }
               if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                snappedY = block.y - blockHeight; // Snap to top of block
-                snappedX = block.x; // Align x to snapped block
+                snappedY = block.y - blockHeight;
+                snappedX = block.x;
                 minDistance = distanceBelow;
               }
             }
-          });
+          }
+        });
 
-          return [...prev, { ...newBlock, x: snappedX, y: snappedY }];
-        }
-
-        // Handle dragging an existing block
-        const movedBlock = prev.find((block) => block.id === id);
-        if (!movedBlock) return prev;
-
-        // Find the group of blocks that are vertically connected
-        const group = [];
-        const visited = new Set();
-        const findGroup = (currentBlock) => {
-          if (visited.has(currentBlock.id)) return;
-          visited.add(currentBlock.id);
-          group.push(currentBlock);
-
-          prev.forEach((block) => {
-            if (block.id !== currentBlock.id) {
-              const distanceAbove = Math.abs(currentBlock.y - (block.y + blockHeight));
-              const distanceBelow = Math.abs(currentBlock.y - (block.y - blockHeight));
-              const distanceX = Math.abs(currentBlock.x - block.x);
-              if ((distanceAbove <= snapDistance || distanceBelow <= snapDistance) && distanceX <= snapXDistance) {
-                findGroup(block);
-              }
-            }
-          });
-        };
-
-        findGroup(movedBlock);
-
-        // Find the topmost block in the group (smallest y-value)
-        const topBlock = group.reduce((top, block) => 
-          !top || block.y < top.y ? block : top, null);
-
-        // If the dragged block is the topmost block, move the entire group
-        if (topBlock && topBlock.id === id) {
-          const deltaX = event.delta.x;
-          const deltaY = event.delta.y;
-
-          // Update positions of all blocks in the group
-          return prev.map((block) => {
-            if (group.some((g) => g.id === block.id)) {
-              let snappedX = block.x + deltaX;
-              let snappedY = block.y + deltaY;
-              let minDistance = Infinity;
-
-              // Apply snapping to other blocks (not in the group)
-              prev.forEach((otherBlock) => {
-                if (!group.some((g) => g.id === otherBlock.id)) {
-                  const distanceAbove = Math.abs(snappedY - (otherBlock.y + blockHeight));
-                  const distanceBelow = Math.abs(snappedY - (otherBlock.y - blockHeight));
-                  const distanceX = Math.abs(snappedX - otherBlock.x);
-
-                  if (distanceX <= snapXDistance) {
-                    if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                      snappedY = otherBlock.y + blockHeight;
-                      snappedX = otherBlock.x;
-                      minDistance = distanceAbove;
-                    }
-                    if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                      snappedY = otherBlock.y - blockHeight;
-                      snappedX = otherBlock.x;
-                      minDistance = distanceBelow;
-                    }
-                  }
+        if (newParentBlock) {
+          let updatedBlocks = prev.filter((block) => !group.some((g) => g.id === block.id));
+          updatedBlocks = updatedBlocks.map((block) =>
+            block.id === newParentBlock.id
+              ? {
+                  ...block,
+                  children: [
+                    ...block.children,
+                    ...group.map((g) => ({
+                      ...g,
+                      x: g === movedBlock ? snappedX : g.x,
+                      y: g === movedBlock ? snappedY : g.y,
+                      parentId: newParentBlock.id,
+                    })),
+                  ],
                 }
-              });
-
-              return { ...block, x: snappedX, y: snappedY };
-            }
-            return block;
-          });
-        } else {
-          // If not the top block, only move the dragged block
-          let snappedX = movedBlock.x + event.delta.x;
-          let snappedY = movedBlock.y + event.delta.y;
-          let minDistance = Infinity;
-
-          prev.forEach((block) => {
-            if (block.id !== id) {
-              const distanceAbove = Math.abs(snappedY - (block.y + blockHeight));
-              const distanceBelow = Math.abs(snappedY - (block.y - blockHeight));
-              const distanceX = Math.abs(snappedX - block.x);
-
-              if (distanceX <= snapXDistance) {
-                if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                  snappedY = block.y + blockHeight;
-                  snappedX = block.x;
-                  minDistance = distanceAbove;
-                }
-                if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                  snappedY = block.y - blockHeight;
-                  snappedX = block.x;
-                  minDistance = distanceBelow;
-                }
-              }
-            }
-          });
-
-          return prev.map((block) =>
-            block.id === id ? { ...block, x: snappedX, y: snappedY } : block
+              : block
           );
+          return updatedBlocks;
         }
-      });
-    }
+
+        // Handle detachment if dragged out of parent
+        if (movedBlock.parentId) {
+          const parentBlock = prev.find((block) => block.id === movedBlock.parentId);
+          if (parentBlock) {
+            const nestingAreaTop = parentBlock.y + 40;
+            const nestingAreaBottom = parentBlock.y + 40 + (parentBlock.children ? parentBlock.children.length * 40 + 50 : 50);
+            const nestingAreaLeft = parentBlock.x + 12;
+            const nestingAreaRight = parentBlock.x + 220 - 12;
+
+            if (
+              snappedX < nestingAreaLeft - 20 ||
+              snappedX > nestingAreaRight + 20 ||
+              snappedY < nestingAreaTop - 20 ||
+              snappedY > nestingAreaBottom + 20
+            ) {
+              let updatedBlocks = prev.map((block) =>
+                block.id === parentBlock.id
+                  ? { ...block, children: block.children.filter((child) => child.id !== movedBlock.id) }
+                  : block
+              );
+              return updatedBlocks.map((block) =>
+                group.some((g) => g.id === block.id)
+                  ? { ...block, x: block.x + deltaX, y: block.y + deltaY, parentId: null }
+                  : block
+              );
+            }
+          }
+        }
+
+        return prev.map((block) =>
+          group.some((g) => g.id === block.id)
+            ? {
+                ...block,
+                x: block.id === id ? snappedX : block.x + deltaX,
+                y: block.id === id ? snappedY : block.y + deltaY,
+                parentId: null,
+              }
+            : block
+        );
+      }
+
+      return prev;
+    });
     setActiveBlock(null);
   };
+
   return (
     <DndContext
       onDragStart={(event) => {
@@ -171,6 +254,8 @@ function PracticeProblem({ darkMode }) {
         setActiveBlock({
           id: active.id,
           label: active.data.current.label,
+          canNest: active.data.current.canNest,
+          color: active.data.current.color,
         });
       }}
       onDragEnd={handleDragEnd}
@@ -183,7 +268,6 @@ function PracticeProblem({ darkMode }) {
           p: 2,
         }}
       >
-        {/* Top Bar */}
         <Box
           sx={{
             display: "flex",
@@ -233,9 +317,7 @@ function PracticeProblem({ darkMode }) {
           </IconButton>
         </Box>
 
-        {/* Main Content */}
         <Box sx={{ display: "flex", height: "calc(100vh - 140px)", gap: 2 }}>
-          {/* Left Component */}
           <Box
             sx={{
               width: "30%",
@@ -294,9 +376,7 @@ function PracticeProblem({ darkMode }) {
             </Box>
           </Box>
 
-          {/* Main Area and Toolkit */}
           <Box sx={{ width: "70%", display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Main Area */}
             <Box
               sx={{
                 flexGrow: 1,
@@ -312,7 +392,6 @@ function PracticeProblem({ darkMode }) {
             >
               <ProblemRightDraggableArea droppedBlocks={droppedBlocks} />
             </Box>
-            {/* Toolkit Component */}
             <Box
               sx={{
                 height: "30%",
@@ -328,7 +407,20 @@ function PracticeProblem({ darkMode }) {
       </Box>
       <DragOverlay zIndex={1000}>
         {activeBlock ? (
-          <Box sx={{ padding: '8px 12px', backgroundColor: '#7B61FF', color: '#fff', borderRadius: '8px', fontWeight: 'bold' }}>
+          <Box
+            sx={{
+              padding: '8px 12px',
+              backgroundColor: activeBlock.color || '#7B61FF',
+              color: '#fff',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              ...(activeBlock.canNest && {
+                borderTop: '40px solid rgba(0, 0, 0, 0.1)',
+                borderBottom: '12px solid rgba(0, 0, 0, 0.1)',
+                padding: '8px 12px 8px 12px',
+              }),
+            }}
+          >
             {activeBlock.label}
           </Box>
         ) : null}
