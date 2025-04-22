@@ -1,38 +1,19 @@
 import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import BlockFactory from '../Blocks/BlockFactory';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { backdropClasses } from '@mui/material';
+import DraggableBlock from './DraggableBlock';
+
 
 function ProblemRightDraggableArea({ droppedBlocks }) {
   const { setNodeRef } = useDroppable({
     id: 'droppable-area',
   });
 
-  const renderBlock = (block) => (
-    <BlockFactory key={block.id} block={block}>
-      {block.children && block.children.length > 0 && (
-        <div style={{ position: 'relative' }}>
-          {block.children.map((child) => (
-            <div
-              key={child.id}
-              style={{
-                position: 'absolute',
-                left: child.x,
-                top: child.y,
-              }}
-            >
-              {renderBlock(child)}
-            </div>
-          ))}
-        </div>
-      )}
-    </BlockFactory>
-  );
-
   return (
     <div
       ref={setNodeRef}
       style={{
-        position: 'relative',
+        position: 'relative', // Required for absolute children
         height: '100%',
         width: '100%',
         borderRadius: '10px',
@@ -40,11 +21,14 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
       }}
     >
       {droppedBlocks.length > 0 ? (
-        droppedBlocks
-          .filter((block) => !block.parentId)
-          .map((block) => renderBlock(block))
+        droppedBlocks.map((block) => (
+          <DraggableBlock
+            key={block.id}
+            block={block}
+          />
+        ))
       ) : (
-        <p style={{ color: '#888', textAlign: 'center' }}>Drop blocks here</p>
+        <p></p>
       )}
     </div>
   );

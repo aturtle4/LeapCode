@@ -16,236 +16,165 @@ function PracticeProblem({ darkMode }) {
   const handleTabChange = (event, newIndex) => {
     setTabIndex(newIndex);
   };
+  const handleRun = () => {
+    console.log(droppedBlocks)
+  };
+  
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-
+  
     if (!over) {
       setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
       return;
     }
-
+  
     const isFromToolkit = active.data.current?.from === 'toolkit';
-    const id = active.id;
-    const blockHeight = 30;
-    const snapDistance = 40;
-    const snapXDistance = 50;
-
+  
     setDroppedBlocks((prev) => {
+      const blockHeight = 50;
+      const snapDistance = 50;
+      const generateId = () => `block-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const blocksCopy = [...prev];
+  
+      const findSnapTarget = (movedBlock, skipId = null) => {
+        let snapTo = null;
+        let snappedY = movedBlock.y;
+        let snappedX = movedBlock.x;
+        let direction = null;
+        let minDistance = Infinity;
+  
+        for (const block of blocksCopy) {
+          if (block.id === skipId) continue;
+  
+          const distanceAbove = Math.abs(movedBlock.y - (block.y + blockHeight));
+          const distanceBelow = Math.abs(movedBlock.y - (block.y - blockHeight));
+  
+          if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
+            snappedY = block.y + blockHeight;
+            snappedX = block.x;
+            snapTo = block;
+            direction = 'below'; // moved block is below snapTo
+            minDistance = distanceAbove;
+          }
+          if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
+            snappedY = block.y - blockHeight;
+            snappedX = block.x;
+            snapTo = block;
+            direction = 'above'; // moved block is above snapTo
+            minDistance = distanceBelow;
+          }
+        }
+  
+        return { snapTo, snappedX, snappedY, direction };
+      };
+  
+      const applySnapRelationship = (movedBlock, snapTo, direction) => {
+        let updatedSnapTo = { ...snapTo };
+        let updatedMovedBlock = { ...movedBlock };
+  
+        // Reset nestedBlocks if not allowed
+        if (!updatedSnapTo.canNest) updatedSnapTo.nestedBlocks = [];
+        if (!updatedMovedBlock.canNest) updatedMovedBlock.nestedBlocks = [];
+  
+        if (direction === 'above') {
+          // Moved block is above — it becomes parent
+          updatedMovedBlock.childId = updatedSnapTo.id;
+          updatedSnapTo.parentId = updatedMovedBlock.id;
+  
+          if (updatedMovedBlock.canNest) {
+            updatedMovedBlock.nestedBlocks = [...new Set([...(updatedMovedBlock.nestedBlocks || []), updatedSnapTo.id])];
+          }
+        } else if (direction === 'below') {
+          // Moved block is below — it becomes child
+          updatedMovedBlock.parentId = updatedSnapTo.id;
+          updatedSnapTo.childId = updatedMovedBlock.id;
+  
+          if (updatedSnapTo.canNest) {
+            updatedSnapTo.nestedBlocks = [...new Set([...(updatedSnapTo.nestedBlocks || []), updatedMovedBlock.id])];
+          }
+        }
+  
+        return { updatedMovedBlock, updatedSnapTo };
+      };
+  
       if (isFromToolkit) {
+        const newId = generateId();
         const newBlock = {
-          id: `${active.data.current.category}-${Date.now()}`,
+          id: newId,
           label: active.data.current.label,
-          type: active.data.current.type,
-          category: active.data.current.category,
-          color: active.data.current.color,
           x: 0,
           y: 0,
-          children: active.data.current.canNest ? [] : null,
+          parentId: null,
+          childId: null,
           canNest: active.data.current.canNest || false,
+          nestedBlocks: [],
         };
-        let snappedX = newBlock.x;
-        let snappedY = newBlock.y;
-        let minDistance = Infinity;
-        let parentBlock = null;
-
-        // Check for nesting
-        prev.forEach((block) => {
-          if (block.canNest && block.children) {
-            const nestingAreaTop = block.y + 40; // Top section ~40px
-            const nestingAreaBottom = block.y + 40 + (block.children ? block.children.length * 40 + 50 : 50);
-            const nestingAreaLeft = block.x + 12;
-            const nestingAreaRight = block.x + 220 - 12;
-
-            if (
-              snappedX >= nestingAreaLeft &&
-              snappedX <= nestingAreaRight &&
-              snappedY >= nestingAreaTop &&
-              snappedY <= nestingAreaBottom
-            ) {
-              parentBlock = block;
-              snappedX = snappedX - block.x;
-              snappedY = snappedY - nestingAreaTop;
-            }
-          }
-        });
-
-        if (parentBlock) {
-          return prev.map((block) =>
-            block.id === parentBlock.id
-              ? {
-                  ...block,
-                  children: [
-                    ...block.children,
-                    { ...newBlock, x: snappedX, y: snappedY, parentId: parentBlock.id },
-                  ],
-                }
-              : block
-          );
+  
+        const { snapTo, snappedX, snappedY, direction } = findSnapTarget(newBlock);
+        newBlock.x = snappedX;
+        newBlock.y = snappedY;
+  
+        if (snapTo && direction) {
+          const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(newBlock, snapTo, direction);
+          return [
+            ...blocksCopy.map(b => (b.id === updatedSnapTo.id ? updatedSnapTo : b)),
+            updatedMovedBlock,
+          ];
         }
-
-        // Snap to other blocks
-        prev.forEach((block) => {
-          const distanceAbove = Math.abs(newBlock.y - (block.y + blockHeight));
-          const distanceBelow = Math.abs(newBlock.y - (block.y - blockHeight));
-          const distanceX = Math.abs(newBlock.x - block.x);
-
-          if (distanceX <= snapXDistance) {
-            if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-              snappedY = block.y + blockHeight;
-              snappedX = block.x;
-              minDistance = distanceAbove;
-            }
-            if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-              snappedY = block.y - blockHeight;
-              snappedX = block.x;
-              minDistance = distanceBelow;
-            }
-          }
-        });
-
-        return [...prev, { ...newBlock, x: snappedX, y: snappedY }];
+  
+        return [...blocksCopy, newBlock];
       }
-
-      // Handle dragging existing blocks
-      const movedBlock = prev.find((block) => block.id === id);
-      if (!movedBlock) return prev;
-
-      const group = [];
-      const visited = new Set();
-      const findGroup = (currentBlock) => {
-        if (visited.has(currentBlock.id)) return;
-        visited.add(currentBlock.id);
-        group.push(currentBlock);
-
-        prev.forEach((block) => {
-          if (block.id !== currentBlock.id) {
-            const distanceAbove = Math.abs(currentBlock.y - (block.y + blockHeight));
-            const distanceBelow = Math.abs(currentBlock.y - (block.y - blockHeight));
-            const distanceX = Math.abs(currentBlock.x - block.x);
-            if ((distanceAbove <= snapDistance || distanceBelow <= snapDistance) && distanceX <= snapXDistance) {
-              findGroup(block);
-            }
-          }
-        });
-      };
-
-      findGroup(movedBlock);
-
-      const topBlock = group.reduce((top, block) => (!top || block.y < top.y ? block : top), null);
-
-      if (topBlock && topBlock.id === id) {
-        const deltaX = event.delta.x;
-        const deltaY = event.delta.y;
-
-        let newParentBlock = null;
-        let snappedX = movedBlock.x + deltaX;
-        let snappedY = movedBlock.y + deltaY;
-
-        let minDistance = Infinity;
-        prev.forEach((block) => {
-          if (block.canNest && block.children && block.id !== id) {
-            const nestingAreaTop = block.y + 40;
-            const nestingAreaBottom = block.y + 40 + (block.children ? block.children.length * 40 + 50 : 50);
-            const nestingAreaLeft = block.x + 12;
-            const nestingAreaRight = block.x + 220 - 12;
-
-            if (
-              snappedX >= nestingAreaLeft &&
-              snappedX <= nestingAreaRight &&
-              snappedY >= nestingAreaTop &&
-              snappedY <= nestingAreaBottom
-            ) {
-              newParentBlock = block;
-              snappedX = snappedX - block.x;
-              snappedY = snappedY - nestingAreaTop;
-            }
-          } else {
-            const distanceAbove = Math.abs(snappedY - (block.y + blockHeight));
-            const distanceBelow = Math.abs(snappedY - (block.y - blockHeight));
-            const distanceX = Math.abs(snappedX - block.x);
-
-            if (distanceX <= snapXDistance) {
-              if (distanceAbove <= snapDistance && distanceAbove < minDistance) {
-                snappedY = block.y + blockHeight;
-                snappedX = block.x;
-                minDistance = distanceAbove;
-              }
-              if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
-                snappedY = block.y - blockHeight;
-                snappedX = block.x;
-                minDistance = distanceBelow;
-              }
-            }
-          }
-        });
-
-        if (newParentBlock) {
-          let updatedBlocks = prev.filter((block) => !group.some((g) => g.id === block.id));
-          updatedBlocks = updatedBlocks.map((block) =>
-            block.id === newParentBlock.id
-              ? {
-                  ...block,
-                  children: [
-                    ...block.children,
-                    ...group.map((g) => ({
-                      ...g,
-                      x: g === movedBlock ? snappedX : g.x,
-                      y: g === movedBlock ? snappedY : g.y,
-                      parentId: newParentBlock.id,
-                    })),
-                  ],
-                }
-              : block
-          );
-          return updatedBlocks;
+  
+      // Existing block being moved
+      const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
+      if (blockIndex === -1) return blocksCopy;
+  
+      const movedBlock = { ...blocksCopy[blockIndex] };
+      movedBlock.x += event.delta.x;
+      movedBlock.y += event.delta.y;
+  
+      // Remove from previous parent's nested list
+      if (movedBlock.parentId) {
+        const oldParentIndex = blocksCopy.findIndex((b) => b.id === movedBlock.parentId);
+        if (oldParentIndex !== -1) {
+          const oldParent = { ...blocksCopy[oldParentIndex] };
+          oldParent.nestedBlocks = oldParent.nestedBlocks?.filter((nid) => nid !== movedBlock.id);
+          if (oldParent.childId === movedBlock.id) oldParent.childId = null;
+          blocksCopy[oldParentIndex] = oldParent;
         }
-
-        // Handle detachment if dragged out of parent
-        if (movedBlock.parentId) {
-          const parentBlock = prev.find((block) => block.id === movedBlock.parentId);
-          if (parentBlock) {
-            const nestingAreaTop = parentBlock.y + 40;
-            const nestingAreaBottom = parentBlock.y + 40 + (parentBlock.children ? parentBlock.children.length * 40 + 50 : 50);
-            const nestingAreaLeft = parentBlock.x + 12;
-            const nestingAreaRight = parentBlock.x + 220 - 12;
-
-            if (
-              snappedX < nestingAreaLeft - 20 ||
-              snappedX > nestingAreaRight + 20 ||
-              snappedY < nestingAreaTop - 20 ||
-              snappedY > nestingAreaBottom + 20
-            ) {
-              let updatedBlocks = prev.map((block) =>
-                block.id === parentBlock.id
-                  ? { ...block, children: block.children.filter((child) => child.id !== movedBlock.id) }
-                  : block
-              );
-              return updatedBlocks.map((block) =>
-                group.some((g) => g.id === block.id)
-                  ? { ...block, x: block.x + deltaX, y: block.y + deltaY, parentId: null }
-                  : block
-              );
-            }
-          }
-        }
-
-        return prev.map((block) =>
-          group.some((g) => g.id === block.id)
-            ? {
-                ...block,
-                x: block.id === id ? snappedX : block.x + deltaX,
-                y: block.id === id ? snappedY : block.y + deltaY,
-                parentId: null,
-              }
-            : block
+      }
+  
+      movedBlock.parentId = null;
+      movedBlock.childId = null;
+  
+      const { snapTo, snappedX, snappedY, direction } = findSnapTarget(movedBlock, movedBlock.id);
+      movedBlock.x = snappedX;
+      movedBlock.y = snappedY;
+  
+      let updatedBlocks = blocksCopy.map((b) => (b.id === movedBlock.id ? movedBlock : b));
+  
+      if (snapTo && direction) {
+        const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(movedBlock, snapTo, direction);
+  
+        updatedBlocks = updatedBlocks.map((b) =>
+          b.id === updatedMovedBlock.id
+            ? updatedMovedBlock
+            : b.id === updatedSnapTo.id
+            ? updatedSnapTo
+            : b
         );
       }
-
-      return prev;
+  
+      return updatedBlocks;
     });
+  
     setActiveBlock(null);
   };
+  
+  
+  
+  
 
   return (
     <DndContext
@@ -254,8 +183,6 @@ function PracticeProblem({ darkMode }) {
         setActiveBlock({
           id: active.id,
           label: active.data.current.label,
-          canNest: active.data.current.canNest,
-          color: active.data.current.color,
         });
       }}
       onDragEnd={handleDragEnd}
@@ -268,6 +195,7 @@ function PracticeProblem({ darkMode }) {
           p: 2,
         }}
       >
+        {/* Top Bar */}
         <Box
           sx={{
             display: "flex",
@@ -291,6 +219,7 @@ function PracticeProblem({ darkMode }) {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Button
               variant="outlined"
+              onClick={handleRun}
               startIcon={<PlayArrow />}
               sx={{
                 color: darkMode ? "#d7d7d6" : "#403f3f",
@@ -317,7 +246,9 @@ function PracticeProblem({ darkMode }) {
           </IconButton>
         </Box>
 
+        {/* Main Content */}
         <Box sx={{ display: "flex", height: "calc(100vh - 140px)", gap: 2 }}>
+          {/* Left Component */}
           <Box
             sx={{
               width: "30%",
@@ -365,10 +296,10 @@ function PracticeProblem({ darkMode }) {
               {tabIndex === 1 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Past Submissions</Typography>
-                  <Box sx={{ backgroundColor: "#fff", borderRadius: "6px", p: 1, mb: 1 }}>
+                  <Box sx={{ backgroundColor: "#2b2b2b", borderRadius: "6px", p: 1, mb: 1 }}>
                     <Typography fontSize={13}>✅ Passed • 2025-04-19 • 34ms</Typography>
                   </Box>
-                  <Box sx={{ backgroundColor: "#fff", borderRadius: "6px", p: 1 }}>
+                  <Box sx={{ backgroundColor: "#2b2b2b", borderRadius: "6px", p: 1 }}>
                     <Typography fontSize={13}>❌ Failed • 2025-04-19 • Test Case 2 Failed</Typography>
                   </Box>
                 </Box>
@@ -376,7 +307,9 @@ function PracticeProblem({ darkMode }) {
             </Box>
           </Box>
 
+          {/* Main Area and Toolkit */}
           <Box sx={{ width: "70%", display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Main Area */}
             <Box
               sx={{
                 flexGrow: 1,
@@ -392,6 +325,7 @@ function PracticeProblem({ darkMode }) {
             >
               <ProblemRightDraggableArea droppedBlocks={droppedBlocks} />
             </Box>
+            {/* Toolkit Component */}
             <Box
               sx={{
                 height: "30%",
@@ -407,20 +341,7 @@ function PracticeProblem({ darkMode }) {
       </Box>
       <DragOverlay zIndex={1000}>
         {activeBlock ? (
-          <Box
-            sx={{
-              padding: '8px 12px',
-              backgroundColor: activeBlock.color || '#7B61FF',
-              color: '#fff',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              ...(activeBlock.canNest && {
-                borderTop: '40px solid rgba(0, 0, 0, 0.1)',
-                borderBottom: '12px solid rgba(0, 0, 0, 0.1)',
-                padding: '8px 12px 8px 12px',
-              }),
-            }}
-          >
+          <Box sx={{ padding: '8px 12px', backgroundColor: '#7B61FF', color: '#fff', borderRadius: '8px', fontWeight: 'bold' }}>
             {activeBlock.label}
           </Box>
         ) : null}
