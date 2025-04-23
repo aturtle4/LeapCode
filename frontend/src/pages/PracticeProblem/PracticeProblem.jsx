@@ -19,6 +19,19 @@ function PracticeProblem({ darkMode }) {
   const handleRun = () => {
     console.log(droppedBlocks)
   };
+  const collectChildren = (blockId, blocksMap) => {
+    const chain = [];
+    let current = blocksMap[blockId];
+  
+    while (current?.childId) {
+      const child = blocksMap[current.childId];
+      if (!child) break;
+      chain.push(child);
+      current = child;
+    }
+  
+    return chain;
+  };
   
 
   const handleDragEnd = (event) => {
@@ -54,14 +67,14 @@ function PracticeProblem({ darkMode }) {
             snappedY = block.y + blockHeight;
             snappedX = block.x;
             snapTo = block;
-            direction = 'below'; // moved block is below snapTo
+            direction = 'below';
             minDistance = distanceAbove;
           }
           if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
             snappedY = block.y - blockHeight;
             snappedX = block.x;
             snapTo = block;
-            direction = 'above'; // moved block is above snapTo
+            direction = 'above';
             minDistance = distanceBelow;
           }
         }
@@ -73,12 +86,10 @@ function PracticeProblem({ darkMode }) {
         let updatedSnapTo = { ...snapTo };
         let updatedMovedBlock = { ...movedBlock };
   
-        // Reset nestedBlocks if not allowed
         if (!updatedSnapTo.canNest) updatedSnapTo.nestedBlocks = [];
         if (!updatedMovedBlock.canNest) updatedMovedBlock.nestedBlocks = [];
   
         if (direction === 'above') {
-          // Moved block is above — it becomes parent
           updatedMovedBlock.childId = updatedSnapTo.id;
           updatedSnapTo.parentId = updatedMovedBlock.id;
   
@@ -86,7 +97,6 @@ function PracticeProblem({ darkMode }) {
             updatedMovedBlock.nestedBlocks = [...new Set([...(updatedMovedBlock.nestedBlocks || []), updatedSnapTo.id])];
           }
         } else if (direction === 'below') {
-          // Moved block is below — it becomes child
           updatedMovedBlock.parentId = updatedSnapTo.id;
           updatedSnapTo.childId = updatedMovedBlock.id;
   
@@ -130,9 +140,32 @@ function PracticeProblem({ darkMode }) {
       const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
       if (blockIndex === -1) return blocksCopy;
   
+      const deltaX = event.delta.x;
+      const deltaY = event.delta.y;
+  
       const movedBlock = { ...blocksCopy[blockIndex] };
-      movedBlock.x += event.delta.x;
-      movedBlock.y += event.delta.y;
+      movedBlock.x += deltaX;
+      movedBlock.y += deltaY;
+  
+      // Move children recursively
+      const blocksMap = Object.fromEntries(blocksCopy.map(b => [b.id, { ...b }]));
+      let current = blocksMap[movedBlock.id];
+  
+      while (current?.childId) {
+        const child = blocksMap[current.childId];
+        if (!child) break;
+        child.x += deltaX;
+        child.y += deltaY;
+        current = child;
+      }
+  
+      // Update blocksCopy with new positions
+      for (const id in blocksMap) {
+        const updatedIndex = blocksCopy.findIndex(b => b.id === id);
+        if (updatedIndex !== -1) {
+          blocksCopy[updatedIndex] = blocksMap[id];
+        }
+      }
   
       // Remove from previous parent's nested list
       if (movedBlock.parentId) {
