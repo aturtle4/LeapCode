@@ -2,50 +2,31 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import BlockFactory from './BlockFactory';
 
-function IfBlock({ block, onBlockUpdate, children, allBlocks }) {
+function IfBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
-  const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
+  const [nestedBlocks, setNestedBlocks] = useState([]);
   const nestingRef = useRef(null);
-  const [nestingHeight, setNestingHeight] = useState(50); // Default height
+  const [nestingHeight, setNestingHeight] = useState(50); // Default height for nesting area
 
-  // Sync nestedBlocks with block.children prop
+  // Sync nestedBlocks with the block's nestedBlocks and resolve block IDs to block data
   useEffect(() => {
-    setNestedBlocks(block.nestedBlocks || []);
-  }, [block.nestedBlocks]);
-
-  // Update nestedBlocks with full block data (instead of just IDs)
-  useEffect(() => {
-    // Convert the stored IDs in nestedBlocks to the full block objects
-    const updatedNestedBlocks = block.nestedBlocks.map(id => {
-      const blockData = allBlocks.find(b => b.id === id);  // Assuming you have access to all blocks
-      return blockData || {};  // Return full block data or empty object if not found
+    // If nestedBlocks contains IDs, resolve those to full block data
+    const resolvedNestedBlocks = block.nestedBlocks.map((id) => {
+      const fullBlockData = allBlocks.find(b => b.id === id);
+      return fullBlockData || {}; // Return block data or empty object if not found
     });
 
-    setNestedBlocks(updatedNestedBlocks);
+    setNestedBlocks(resolvedNestedBlocks);
   }, [block.nestedBlocks, allBlocks]);
 
-  // Set childId of the main block to null if any nestedBlock has the same id as the main block
+  // Adjust nesting area height based on nested blocks count
   useEffect(() => {
-    const blockIsNested = nestedBlocks.some((nestedBlock) => nestedBlock.id === block.id);
-
-    // If the block is in nestedBlocks, set childId to null
-    if (blockIsNested) {
-      if (onBlockUpdate) {
-        onBlockUpdate(block.id, { ...block, childId: null });
-      }
-    }
-  }, [block, nestedBlocks, onBlockUpdate]);
-
-  // Update nesting height based on content
-  useEffect(() => {
-    if (nestingRef.current) {
-      const height = nestedBlocks.length*90;
-      setNestingHeight(height > 0 ? height : 50); // Fallback to 50px if no content
-    }
+    const newHeight = nestedBlocks.length * 90; // 90px per nested block
+    setNestingHeight(newHeight > 0 ? newHeight : 50); // Fallback to 50px if no content
   }, [nestedBlocks]);
 
   const { setNodeRef: droppableRef } = useDroppable({
-    id: `nesting-${block.id}`,
+    id: `nesting-${block.id}`, // Unique id for droppable area
   });
 
   const style = {
@@ -68,7 +49,7 @@ function IfBlock({ block, onBlockUpdate, children, allBlocks }) {
 
   const nestingAreaStyle = {
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    height: `${nestingHeight}px`, // This should control the height of the area
+    height: `${nestingHeight}px`, // Dynamic height based on nested blocks
     padding: '8px',
     margin: '0 12px',
     position: 'relative',
@@ -76,8 +57,8 @@ function IfBlock({ block, onBlockUpdate, children, allBlocks }) {
     borderRight: '2px dashed rgba(255, 255, 255, 0.3)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px', // Space between stacked blocks
-    overflow: 'auto', // Allow overflow to be visible if nesting height is too small
+    gap: '4px', // Space between nested blocks
+    overflow: 'auto', // Ensure overflow is visible
   };
 
   const bottomSectionStyle = {
@@ -107,13 +88,16 @@ function IfBlock({ block, onBlockUpdate, children, allBlocks }) {
           }}
         />
       </div>
-      <div ref={(node) => {
-        droppableRef(node);
-        nestingRef.current = node;
-      }} style={nestingAreaStyle}>
+      <div
+        ref={(node) => {
+          droppableRef(node);
+          nestingRef.current = node;
+        }}
+        style={nestingAreaStyle}
+      >
         {nestedBlocks.length > 0 ? (
           nestedBlocks.map((child) => (
-            <BlockFactory key={child.id} block={child} positioning="static"/>
+            <BlockFactory key={child.id} block={child} positioning="static" allBlocks={allBlocks} />
           ))
         ) : (
           <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px', textAlign: 'center' }}>
