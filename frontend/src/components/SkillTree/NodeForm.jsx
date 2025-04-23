@@ -426,8 +426,8 @@ const NodeForm = ({
           variant="outlined"
           sx={{
             mt: 1,
-            color: darkMode ? "#90caf9" : "#1976d2",
-            borderColor: darkMode ? "#90caf9" : "#1976d2",
+            color: darkMode ? "#2196f3" : "#1976d2",
+            borderColor: darkMode ? "#2196f3" : "#1976d2",
           }}
         >
           Add Step
@@ -455,8 +455,8 @@ const NodeForm = ({
             )
           }
           sx={{
-            backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
-            "&:hover": { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
+            backgroundColor: darkMode ? "#2196f3" : "#1976d2",
+            "&:hover": { backgroundColor: darkMode ? "#1976d2" : "#1565c0" },
           }}
         >
           {loading ? "Saving..." : isEditMode ? "Update Node" : "Save Node"}

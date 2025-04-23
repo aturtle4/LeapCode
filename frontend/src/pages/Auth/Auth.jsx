@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import InfoIcon from "@mui/icons-material/Info";
 import GoogleIcon from "@mui/icons-material/Google";
 import {
   Box,
@@ -9,20 +8,20 @@ import {
   TextField,
   Typography,
   Button,
-  Tabs,
-  Tab,
   Divider,
   CircularProgress,
   Alert,
+  Tab,
+  Tabs,
+  Paper,
 } from "@mui/material";
-import Auth_NavBar from "../../components/Auth_NavBar/Auth_NavBar";
+import AuthNavBar from "../../components/Auth_NavBar/Auth_NavBar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
 import "./Auth.css";
 
 function Auth({ darkMode, toggleDarkMode }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [selectedTab, setSelectedTab] = useState(1);
+  const [activeTab, setActiveTab] = useState(0); // 0 for login, 1 for signup
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -68,20 +67,21 @@ function Auth({ darkMode, toggleDarkMode }) {
     });
   };
 
-  const toggleForm = () => {
-    setIsLogin(!isLogin);
-    setSelectedTab(isLogin ? 2 : 1);
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
     setError("");
     setSuccess("");
   };
 
   const validateForm = () => {
-    if (isLogin) {
+    if (activeTab === 0) {
+      // Login validation
       if (!formData.email || !formData.password) {
         setError("Please fill in all fields");
         return false;
       }
     } else {
+      // Signup validation
       if (
         !formData.username ||
         !formData.email ||
@@ -127,10 +127,12 @@ function Auth({ darkMode, toggleDarkMode }) {
     setSuccess("");
 
     try {
-      if (isLogin) {
+      if (activeTab === 0) {
+        // Login
         await login(formData.email, formData.password);
         setSuccess("Login successful!");
       } else {
+        // Signup
         await register({
           email: formData.email,
           password: formData.password,
@@ -139,6 +141,8 @@ function Auth({ darkMode, toggleDarkMode }) {
           lastName: formData.lastName,
         });
         setSuccess("Account created successfully!");
+        // Optionally switch to login tab after successful registration
+        setActiveTab(0);
       }
     } catch (err) {
       setError(err.detail || "Authentication failed");
@@ -154,390 +158,382 @@ function Auth({ darkMode, toggleDarkMode }) {
   };
 
   return (
-    <div>
-      <Auth_NavBar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+    <div
+      className="auth-container"
+      style={{
+        backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+        minHeight: "100vh",
+      }}
+    >
+      <AuthNavBar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
       <Box
         sx={{
-          height: "100vh",
-          backgroundColor: darkMode ? "#353535" : "#d9d9d9",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          position: "relative",
+          minHeight: "calc(100vh - 64px)", // Account for navbar height
+          padding: "20px",
         }}
       >
         <Card
+          elevation={6}
           sx={{
-            width: "900px",
-            height: !isLogin ? "500px" : "400px", // Make card taller for signup
-            backgroundColor: darkMode ? "#403F3F" : "#d9d9d9",
+            width: "100%",
+            maxWidth: "450px",
+            backgroundColor: darkMode ? "#403F3F" : "#f5f5f5",
             color: darkMode ? "#d7d7d6" : "#403f3f",
-            display: "flex",
-            alignItems: "start",
-            justifyContent: "end",
-            padding: "20px",
-            boxShadow: 3,
-            position: "relative",
+            borderRadius: "10px",
+            overflow: "hidden",
           }}
         >
-          <Box
+          <Paper
+            elevation={0}
             sx={{
-              width: "100px",
-              height: "400px",
-              backgroundColor: darkMode ? "#403F3F" : "#d9d9d9",
-              color: darkMode ? "#d7d7d6" : "#403f3f",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-465%, -50%)",
+              backgroundColor: darkMode ? "#353535" : "#e0e0e0",
+              borderRadius: 0,
             }}
           >
             <Tabs
-              orientation="vertical"
-              value={selectedTab}
-              onChange={(e, newValue) => {
-                setSelectedTab(newValue);
-                setIsLogin(newValue === 1);
-              }}
+              value={activeTab}
+              onChange={handleTabChange}
+              variant="fullWidth"
               sx={{
-                flexGrow: 1,
-                width: "100%",
-                height: "100%",
                 "& .MuiTabs-indicator": {
-                  backgroundColor: darkMode ? "#d7d7d6" : "#403f3f",
+                  backgroundColor: darkMode ? "#2196f3" : "#1976d2",
                 },
                 "& .MuiTab-root": {
-                  width: "100%",
                   color: darkMode ? "#d7d7d6" : "#403f3f",
-                  justifyContent: "flex-center",
-                  alignItems: "center",
-                  padding: "50px",
+                  fontWeight: "bold",
+                  "&.Mui-selected": {
+                    color: darkMode ? "#2196f3" : "#1976d2",
+                  },
                 },
               }}
             >
-              <Tab
-                icon={
-                  <InfoIcon
-                    fontSize="large"
-                    sx={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
-                  />
-                }
-                disabled
-              />
-              <Tab
-                icon={
-                  <LoginIcon
-                    fontSize="large"
-                    sx={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
-                  />
-                }
-              />
-              <Tab
-                icon={
-                  <PersonAddIcon
-                    fontSize="large"
-                    sx={{ color: darkMode ? "#d7d7d6" : "#403f3f" }}
-                  />
-                }
-              />
+              <Tab icon={<LoginIcon />} label="Login" />
+              <Tab icon={<PersonAddIcon />} label="Sign Up" />
             </Tabs>
-          </Box>
+          </Paper>
+
           <Box
             sx={{
-              width: "350px",
-              height: !isLogin ? "480px" : "400px", // Make box taller for signup
-              backgroundColor: darkMode ? "#403F3F" : "#d9d9d9",
-              color: darkMode ? "#d7d7d6" : "#403f3f",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "start",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(20%, -50%)",
-              overflow: !isLogin ? "auto" : "visible", // Add scroll for signup form
-              paddingRight: "8px",
+              padding: "24px",
             }}
           >
-            <Typography variant="h4">{isLogin ? "Login" : "SignUp"}</Typography>
-            {!isLogin && (
-              <TextField
-                fullWidth
-                required
-                label="Username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                margin="dense"
-                variant="outlined"
-                InputLabelProps={{
-                  style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
-                }}
-                InputProps={{
-                  style: {
-                    color: darkMode ? "#d7d7d6" : "#403f3f",
-                    backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
-                  },
-                  sx: {
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: darkMode ? "#d7d6d6" : "#403f3f",
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: darkMode ? "#ffffff" : "#000000",
-                    },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: darkMode ? "#ff9800" : "#1976d2",
-                    },
-                  },
-                }}
-              />
-            )}
-            <TextField
-              fullWidth
-              required
-              label="Email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              margin={isLogin ? "normal" : "dense"}
-              variant="outlined"
-              InputLabelProps={{
-                style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
-              }}
-              InputProps={{
-                style: {
-                  color: darkMode ? "#d7d7d6" : "#403f3f",
-                  backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
-                },
-                sx: {
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#d7d6d6" : "#403f3f",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#ffffff" : "#000000",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#ff9800" : "#1976d2",
-                  },
-                },
-              }}
-            />
-            <TextField
-              fullWidth
-              required
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              margin={isLogin ? "normal" : "dense"}
-              variant="outlined"
-              InputLabelProps={{
-                style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
-              }}
-              InputProps={{
-                style: {
-                  color: darkMode ? "#d7d7d6" : "#403f3f",
-                  backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
-                },
-                sx: {
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#d7d6d6" : "#403f3f",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#ffffff" : "#000000",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: darkMode ? "#ff9800" : "#1976d2",
-                  },
-                },
-              }}
-            />
-            {!isLogin && (
-              <>
+            <Typography variant="h4" align="center" gutterBottom>
+              {activeTab === 0 ? "Welcome Back" : "Create Account"}
+            </Typography>
+
+            <Box sx={{ mt: 2 }}>
+              {activeTab === 1 && ( // Sign up fields
                 <TextField
                   fullWidth
                   required
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
+                  label="Username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleInputChange}
-                  margin="dense"
+                  margin="normal"
                   variant="outlined"
                   InputLabelProps={{
-                    style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
+                    sx: {
+                      color: darkMode ? "#82b1ff" : "#2196f3",
+                      "&.Mui-focused": {
+                        color: darkMode ? "#2196f3" : "#1976d2",
+                      },
+                    },
+                  }}
+                  FormHelperTextProps={{
+                    sx: { color: darkMode ? "#f5f5f5" : "#555555" },
                   }}
                   InputProps={{
                     style: {
-                      color: darkMode ? "#d7d7d6" : "#403f3f",
-                      backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
+                      color: darkMode ? "#f5f5f5" : "#403f3f",
                     },
                     sx: {
                       "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: darkMode ? "#d7d6d6" : "#403f3f",
+                        borderColor: darkMode ? "#aaaaaa" : "#777777",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: darkMode ? "#ffffff" : "#000000",
+                        borderColor: darkMode ? "#2196f3" : "#1976d2",
                       },
                       "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: darkMode ? "#ff9800" : "#1976d2",
+                        borderColor: darkMode ? "#2196f3" : "#1976d2",
                       },
                     },
                   }}
                 />
-
-                <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    margin="dense"
-                    variant="outlined"
-                    InputLabelProps={{
-                      style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
-                    }}
-                    InputProps={{
-                      style: {
-                        color: darkMode ? "#d7d7d6" : "#403f3f",
-                        backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
-                      },
-                      sx: {
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#d7d6d6" : "#403f3f",
-                        },
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#ffffff" : "#000000",
-                        },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#ff9800" : "#1976d2",
-                        },
-                      },
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    margin="dense"
-                    variant="outlined"
-                    InputLabelProps={{
-                      style: { color: darkMode ? "#d9d9d9" : "#403F3F" },
-                    }}
-                    InputProps={{
-                      style: {
-                        color: darkMode ? "#d7d7d6" : "#403f3f",
-                        backgroundColor: darkMode ? "#403f3f" : "#d9d9d9",
-                      },
-                      sx: {
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#d7d6d6" : "#403f3f",
-                        },
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#ffffff" : "#000000",
-                        },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode ? "#ff9800" : "#1976d2",
-                        },
-                      },
-                    }}
-                  />
-                </Box>
-              </>
-            )}
-
-            {/* Error and success message display */}
-            {error && (
-              <Alert severity="error" sx={{ mt: 1, width: "100%" }}>
-                {error}
-              </Alert>
-            )}
-
-            {authError && (
-              <Alert severity="error" sx={{ mt: 1, width: "100%" }}>
-                {authError}
-              </Alert>
-            )}
-
-            {success && (
-              <Alert severity="success" sx={{ mt: 1, width: "100%" }}>
-                {success}
-              </Alert>
-            )}
-
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              sx={{ marginTop: "20px" }}
-              onClick={handleAuth}
-              disabled={loading}
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : isLogin ? (
-                "Login"
-              ) : (
-                "Sign Up"
               )}
-            </Button>
 
-            <Divider
-              sx={{
-                width: "100%",
-                my: 2,
-                color: darkMode ? "#d7d7d6" : "#403f3f",
-                "&::before, &::after": {
-                  borderColor: darkMode ? "#d7d7d6" : "#403f3f",
-                },
-              }}
-            >
-              OR
-            </Divider>
+              <TextField
+                fullWidth
+                required
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                margin="normal"
+                variant="outlined"
+                InputLabelProps={{
+                  sx: {
+                    color: darkMode ? "#82b1ff" : "#2196f3",
+                    "&.Mui-focused": {
+                      color: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                  },
+                }}
+                FormHelperTextProps={{
+                  sx: { color: darkMode ? "#f5f5f5" : "#555555" },
+                }}
+                InputProps={{
+                  style: {
+                    color: darkMode ? "#f5f5f5" : "#403f3f",
+                  },
+                  sx: {
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#aaaaaa" : "#777777",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                  },
+                }}
+              />
 
-            <Button
-              fullWidth
-              variant="outlined"
-              color="primary"
-              startIcon={<GoogleIcon />}
-              onClick={handleGoogleAuth}
-              sx={{ mb: 2 }}
-              disabled={loading}
-            >
-              Continue with Google
-            </Button>
+              <TextField
+                fullWidth
+                required
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                margin="normal"
+                variant="outlined"
+                InputLabelProps={{
+                  sx: {
+                    color: darkMode ? "#82b1ff" : "#2196f3",
+                    "&.Mui-focused": {
+                      color: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                  },
+                }}
+                FormHelperTextProps={{
+                  sx: { color: darkMode ? "#f5f5f5" : "#555555" },
+                }}
+                InputProps={{
+                  style: {
+                    color: darkMode ? "#f5f5f5" : "#403f3f",
+                  },
+                  sx: {
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#aaaaaa" : "#777777",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: darkMode ? "#2196f3" : "#1976d2",
+                    },
+                  },
+                }}
+              />
+
+              {activeTab === 1 && ( // Additional sign up fields
+                <>
+                  <TextField
+                    fullWidth
+                    required
+                    label="Confirm Password"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    margin="normal"
+                    variant="outlined"
+                    InputLabelProps={{
+                      sx: {
+                        color: darkMode ? "#82b1ff" : "#2196f3",
+                        "&.Mui-focused": {
+                          color: darkMode ? "#2196f3" : "#1976d2",
+                        },
+                      },
+                    }}
+                    FormHelperTextProps={{
+                      sx: { color: darkMode ? "#f5f5f5" : "#555555" },
+                    }}
+                    InputProps={{
+                      style: {
+                        color: darkMode ? "#f5f5f5" : "#403f3f",
+                      },
+                      sx: {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "#aaaaaa" : "#777777",
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "#2196f3" : "#1976d2",
+                        },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "#2196f3" : "#1976d2",
+                        },
+                      },
+                    }}
+                  />
+
+                  <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      margin="normal"
+                      variant="outlined"
+                      InputLabelProps={{
+                        sx: {
+                          color: darkMode ? "#82b1ff" : "#2196f3",
+                          "&.Mui-focused": {
+                            color: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                        },
+                      }}
+                      FormHelperTextProps={{
+                        sx: { color: darkMode ? "#f5f5f5" : "#555555" },
+                      }}
+                      InputProps={{
+                        style: {
+                          color: darkMode ? "#f5f5f5" : "#403f3f",
+                        },
+                        sx: {
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#aaaaaa" : "#777777",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                        },
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      margin="normal"
+                      variant="outlined"
+                      InputLabelProps={{
+                        sx: {
+                          color: darkMode ? "#82b1ff" : "#2196f3",
+                          "&.Mui-focused": {
+                            color: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                        },
+                      }}
+                      FormHelperTextProps={{
+                        sx: { color: darkMode ? "#f5f5f5" : "#555555" },
+                      }}
+                      InputProps={{
+                        style: {
+                          color: darkMode ? "#f5f5f5" : "#403f3f",
+                        },
+                        sx: {
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#aaaaaa" : "#777777",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                        },
+                      }}
+                    />
+                  </Box>
+                </>
+              )}
+
+              {/* Error and success messages */}
+              {(error || authError) && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {error || authError}
+                </Alert>
+              )}
+
+              {success && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  {success}
+                </Alert>
+              )}
+
+              {/* Action button */}
+              <Button
+                fullWidth
+                variant="contained"
+                color="primary"
+                size="large"
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  backgroundColor: darkMode ? "#2196f3" : "#1976d2",
+                  "&:hover": {
+                    backgroundColor: darkMode ? "#1976d2" : "#1565c0",
+                  },
+                }}
+                onClick={handleAuth}
+                disabled={loading}
+              >
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : activeTab === 0 ? (
+                  "Login"
+                ) : (
+                  "Sign Up"
+                )}
+              </Button>
+
+              {/* Tab switcher */}
+              <Box sx={{ textAlign: "center", mb: 2 }}>
+                <Button
+                  color="primary"
+                  onClick={() => setActiveTab(activeTab === 0 ? 1 : 0)}
+                >
+                  {activeTab === 0
+                    ? "Don't have an account? Sign up"
+                    : "Already have an account? Login"}
+                </Button>
+              </Box>
+
+              <Divider sx={{ my: 2 }}>OR</Divider>
+
+              {/* Google auth button */}
+              <Button
+                fullWidth
+                variant="outlined"
+                color="primary"
+                startIcon={<GoogleIcon />}
+                onClick={handleGoogleAuth}
+                sx={{
+                  borderColor: darkMode ? "#2196f3" : "#1976d2",
+                  color: darkMode ? "#2196f3" : "#1976d2",
+                  "&:hover": {
+                    borderColor: darkMode ? "#1976d2" : "#1565c0",
+                  },
+                }}
+                disabled={loading}
+              >
+                Continue with Google
+              </Button>
+            </Box>
           </Box>
-        </Card>
-
-        <Card
-          sx={{
-            width: "400px",
-            height: !isLogin ? "550px" : "550px",
-            backgroundColor: darkMode ? "#403F3F" : "#d9d9d9",
-            color: darkMode ? "#d7d7d6" : "#403f3f",
-            display: "flex",
-            alignItems: "end",
-            justifyContent: "center",
-            boxShadow: 6,
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-89%, -50%)",
-            zIndex: 10,
-          }}
-        >
-          <Button variant="Contained" onClick={toggleForm}>
-            {isLogin
-              ? "Don't have an Account? Signup"
-              : "Already have an Account? Login"}
-          </Button>
         </Card>
       </Box>
     </div>

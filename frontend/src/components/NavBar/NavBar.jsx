@@ -7,19 +7,18 @@ import {
   Menu,
   MenuItem,
   Box,
-  Button,
   Tooltip,
 } from "@mui/material";
 import {
   AccountCircle,
   Brightness4,
   Brightness7,
-  BarChart,
+  Code as CodeIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
-function NavBar({ darkMode, toggleDarkMode, currentPage }) {
+function NavBar({ darkMode, toggleDarkMode }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
@@ -42,8 +41,8 @@ function NavBar({ darkMode, toggleDarkMode, currentPage }) {
       position="static"
       elevation={0}
       sx={{
-        backgroundColor: darkMode ? "#2c2c2c" : "#f5f5f5",
-        color: darkMode ? "#ffffff" : "#333333",
+        backgroundColor: darkMode ? "#353535" : "#d9d9d9",
+        color: darkMode ? "#d7d7d6" : "#403f3f",
         transition: "all 0.3s ease",
         borderBottom: `1px solid ${darkMode ? "#444444" : "#e0e0e0"}`,
       }}
@@ -54,57 +53,44 @@ function NavBar({ darkMode, toggleDarkMode, currentPage }) {
           sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
           onClick={() => navigate("/home")}
         >
-          <Typography
-            variant="h4"
+          <CodeIcon
             sx={{
-              fontWeight: "700",
-              background: "linear-gradient(90deg, #3498db, #2ecc71)",
+              mr: 1,
+              fontSize: "1.5rem",
+              color: darkMode ? "#82b1ff" : "#1976d2",
+            }}
+          />
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              letterSpacing: "0.5px",
+              fontFamily: "'Roboto Condensed', 'Roboto', sans-serif",
+              background: "linear-gradient(90deg, #1976d2 0%, #2196f3 100%)",
+              backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              letterSpacing: "1px",
+              textShadow: darkMode ? "0px 1px 2px rgba(0,0,0,0.3)" : "none",
             }}
           >
             LeapCode
           </Typography>
         </Box>
 
-        {/* Center Section - Main Navigation */}
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button
-            startIcon={<BarChart />}
-            onClick={() => navigate("/home")}
-            variant={currentPage === "skillTree" ? "contained" : "text"}
+        {/* Center Section - Title or Welcome Message */}
+        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
+          <Typography
+            variant="h6"
             sx={{
-              mx: 1,
-              px: 3,
-              py: 1,
-              borderRadius: "8px",
-              backgroundColor:
-                currentPage === "skillTree" &&
-                (darkMode ? "#1976d2" : "#2196f3"),
-              color:
-                currentPage === "skillTree"
-                  ? "#ffffff"
-                  : darkMode
-                  ? "#d7d7d6"
-                  : "#555555",
-              "&:hover": {
-                backgroundColor:
-                  currentPage === "skillTree"
-                    ? darkMode
-                      ? "#1565c0"
-                      : "#1976d2"
-                    : darkMode
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.05)",
-              },
-              textTransform: "none",
-              fontSize: "1rem",
+              color: darkMode ? "#d7d7d6" : "#555555",
               fontWeight: 500,
+              letterSpacing: "0.5px",
             }}
           >
-            Skill Trees
-          </Button>
+            {user?.first_name
+              ? `Welcome, ${user.first_name}!`
+              : "Welcome to your learning journey"}
+          </Typography>
         </Box>
 
         {/* Right Section - User & Theme */}
@@ -116,7 +102,7 @@ function NavBar({ darkMode, toggleDarkMode, currentPage }) {
             <IconButton
               onClick={toggleDarkMode}
               sx={{
-                color: darkMode ? "#ffd54f" : "#9e9e9e",
+                color: darkMode ? "#2196f3" : "#1976d2",
                 marginRight: 2,
               }}
             >

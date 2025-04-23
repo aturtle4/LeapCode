@@ -20,7 +20,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.4.4",
+    "framer-motion": "^12.7.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0",

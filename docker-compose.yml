@@ -20,10 +20,35 @@ services:
     volumes:
       - ./backend:/app
     environment:
+      # Database Configuration
       - DATABASE_URL=postgresql://leapcode:leapcode@db:5432/leapcode
+      - DB_POOL_SIZE=10
+      - DB_MAX_OVERFLOW=20
+      - DB_POOL_TIMEOUT=30
+      
+      # Security Configuration
       - SECRET_KEY=14e8907484970b368c95923ac502c07b234e9b52afed1196507660cbe4e7480c
+      - REFRESH_TOKEN_SECRET_KEY=another_secure_secret_key_for_refresh_tokens
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      
+      # Rate Limiting Configuration
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_PERIOD_SECONDS=60
+      
+      # Application Configuration
+      - ENVIRONMENT=development
+      - DEBUG=true
     depends_on:
       - db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
       
   db:
     image: postgres:13
@@ -35,6 +60,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leapcode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
+    driver: local

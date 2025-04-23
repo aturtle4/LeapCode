@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Home from "./pages/Home/Home";
@@ -11,11 +11,27 @@ import { AuthProvider } from "./context/AuthProvider";
 import ProtectedRoute from "./context/ProtectedRoute";
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  // Initialize darkMode state from localStorage or default to false
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme ? JSON.parse(savedTheme) : false;
+  });
   
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    const newDarkModeValue = !darkMode;
+    setDarkMode(newDarkModeValue);
+    // Save to localStorage whenever it changes
+    localStorage.setItem("theme", JSON.stringify(newDarkModeValue));
   };
+
+  // Apply theme to document body so it can be used in CSS
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
 
   return (
     <div className="App">

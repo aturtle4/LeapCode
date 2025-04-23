@@ -212,7 +212,7 @@ function SkillTree({ darkMode, toggleDarkMode }) {
       >
         <CircularProgress
           size={60}
-          sx={{ color: darkMode ? "#90caf9" : "#1976d2" }}
+          sx={{ color: darkMode ? "#2196f3" : "#1976d2" }}
         />
       </Box>
     );
@@ -517,11 +517,11 @@ function SkillTree({ darkMode, toggleDarkMode }) {
                               mt: 1,
                               padding: "10px 15px",
                               borderRadius: "10px",
-                              backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+                              backgroundColor: darkMode ? "#2196f3" : "#1976d2",
                               color: "#fff",
                               "&:hover": {
                                 backgroundColor: darkMode
-                                  ? "#1565c0"
+                                  ? "#1976d2"
                                   : "#1565c0",
                               },
                             }}
@@ -563,9 +563,9 @@ function SkillTree({ darkMode, toggleDarkMode }) {
                 startIcon={<Add />}
                 onClick={() => setNodeFormOpen(true)}
                 sx={{
-                  backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
+                  backgroundColor: darkMode ? "#2196f3" : "#1976d2",
                   "&:hover": {
-                    backgroundColor: darkMode ? "#1565c0" : "#1565c0",
+                    backgroundColor: darkMode ? "#1976d2" : "#1565c0",
                   },
                 }}
               >
@@ -585,8 +585,8 @@ function SkillTree({ darkMode, toggleDarkMode }) {
               position: "fixed",
               bottom: 32,
               right: 32,
-              backgroundColor: darkMode ? "#1e88e5" : "#1976d2",
-              "&:hover": { backgroundColor: darkMode ? "#1565c0" : "#1565c0" },
+              backgroundColor: darkMode ? "#2196f3" : "#1976d2",
+              "&:hover": { backgroundColor: darkMode ? "#1976d2" : "#1565c0" },
             }}
           >
             <Add />

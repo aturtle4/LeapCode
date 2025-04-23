@@ -1,5 +1,6 @@
 import os
 from pydantic_settings import BaseSettings
+from typing import List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,11 +11,16 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "LeapCode"
     PROJECT_VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    DEBUG: bool = os.getenv("DEBUG", "True").lower() in ("true", "1", "t")
 
     # Database
     DATABASE_URL: str = os.getenv(
-        "DB_URL", "postgresql://leapcode:leapcode@db:5432/leapcode"
+        "DATABASE_URL", "postgresql://leapcode:leapcode@db:5432/leapcode"
     )
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", 5))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", 10))
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", 30))
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key")
@@ -35,7 +41,7 @@ class Settings(BaseSettings):
     )
 
     # CORS
-    CORS_ORIGINS: list = [
+    CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
         "http://127.0.0.1:3000",
@@ -44,8 +50,18 @@ class Settings(BaseSettings):
         "https://localhost",
     ]
 
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "True").lower() in (
+        "true",
+        "1",
+        "t",
+    )
+    RATE_LIMIT_REQUESTS: int = int(os.getenv("RATE_LIMIT_REQUESTS", 100))
+    RATE_LIMIT_PERIOD_SECONDS: int = int(os.getenv("RATE_LIMIT_PERIOD_SECONDS", 60))
+
     class Config:
         case_sensitive = True
+        env_file = ".env"
 
 
 settings = Settings()

@@ -19,6 +19,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, Token, UserResponse, TokenPair, RefreshToken
 from app.api.dependencies import get_current_user
+from app.services.file_storage import file_storage_service
 
 router = APIRouter()
 
@@ -256,11 +257,15 @@ async def google_callback(
         )
 
     userinfo = userinfo_response.json()
+    remote_profile_picture = userinfo.get("picture")
 
     # Check if user exists
     user = db.query(User).filter(User.email == userinfo.get("email")).first()
+    is_new_user = False
+
     if not user:
         # Create user
+        is_new_user = True
         user = User(
             email=userinfo.get("email"),
             username=userinfo.get("email").split("@")[0],
@@ -269,8 +274,7 @@ async def google_callback(
             oauth_id=userinfo.get("sub"),
             first_name=userinfo.get("given_name"),
             last_name=userinfo.get("family_name"),
-            profile_picture=userinfo.get("picture"),
-            # Store the complete token data for Google API access
+            profile_picture=remote_profile_picture,  # Initially store the remote URL
             google_token=json.dumps(token_data),
         )
         db.add(user)
@@ -282,17 +286,41 @@ async def google_callback(
         user.oauth_provider = "google"
         user.oauth_id = userinfo.get("sub")
         if not user.profile_picture:
-            user.profile_picture = userinfo.get("picture")
-        # Store the complete token data
+            user.profile_picture = remote_profile_picture
         user.google_token = json.dumps(token_data)
         db.commit()
         db.refresh(user)
     else:
         # User exists and is already connected to Google
-        # Update the token
+        # Update the token and profile picture URL (it might have changed)
         user.google_token = json.dumps(token_data)
+        if remote_profile_picture and remote_profile_picture != user.profile_picture:
+            user.profile_picture = remote_profile_picture
         db.commit()
         db.refresh(user)
+
+    # Cache the profile picture if it exists
+    if remote_profile_picture:
+        try:
+            # Download and cache the profile picture
+            cached_path = file_storage_service.download_profile_image(
+                remote_profile_picture, user.id
+            )
+
+            if cached_path:
+                # Update user with local cached profile picture URL
+                base_url = f"{request.url.scheme}://{request.url.netloc}"
+                local_profile_url = f"{base_url}/static/{cached_path}"
+
+                # Only update if different to avoid unnecessary DB updates
+                if local_profile_url != user.profile_picture:
+                    user.profile_picture = local_profile_url
+                    db.commit()
+                    db.refresh(user)
+        except Exception as e:
+            # Log the error but continue - this is not a critical error
+            print(f"Error caching profile picture: {str(e)}")
+            # If this fails, we'll still have the remote URL stored
 
     # Create token pair
     access_token, refresh_token = create_token_pair(user.id)
@@ -324,8 +352,34 @@ async def google_callback(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)) -> Any:
+def get_me(request: Request, current_user: User = Depends(get_current_user)) -> Any:
     """
     Get current user information
     """
+    # Check if we need to cache the profile picture
+    if (
+        current_user.profile_picture
+        and "googleusercontent.com" in current_user.profile_picture
+    ):
+        try:
+            # Try to download and cache the profile image if it's a Google URL
+            cached_path = file_storage_service.download_profile_image(
+                current_user.profile_picture, current_user.id
+            )
+
+            if cached_path:
+                # Update user with local cached profile picture URL
+                base_url = f"{request.url.scheme}://{request.url.netloc}"
+                local_profile_url = f"{base_url}/static/{cached_path}"
+
+                # Only update if different to avoid unnecessary DB updates
+                if local_profile_url != current_user.profile_picture:
+                    db = next(get_db())
+                    current_user.profile_picture = local_profile_url
+                    db.commit()
+                    db.refresh(current_user)
+        except Exception as e:
+            # Log error but continue
+            print(f"Error caching profile picture in /me endpoint: {str(e)}")
+
     return current_user

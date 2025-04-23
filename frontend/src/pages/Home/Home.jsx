@@ -6,11 +6,7 @@ import SkillTreeHome from "../../components/SkillTree/SkillTreeHome";
 function Home({ darkMode, toggleDarkMode }) {
   return (
     <div>
-      <NavBar
-        darkMode={darkMode}
-        toggleDarkMode={toggleDarkMode}
-        currentPage="skillTree"
-      />
+      <NavBar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
       <Box
         sx={{
           minHeight: "calc(100vh - 64px)", // Adjust for navbar height
