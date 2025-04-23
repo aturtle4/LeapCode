@@ -45,7 +45,7 @@ function PracticeProblem({ darkMode }) {
     const isFromToolkit = active.data.current?.from === 'toolkit';
   
     setDroppedBlocks((prev) => {
-      const blockHeight = 50;
+      const blockHeight = 90;
       const snapDistance = 50;
       const generateId = () => `block-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const blocksCopy = [...prev];
@@ -110,9 +110,11 @@ function PracticeProblem({ darkMode }) {
   
       if (isFromToolkit) {
         const newId = generateId();
+        console.log(active.data.current)
         const newBlock = {
           id: newId,
           label: active.data.current.label,
+          type: active.data.current.type,
           x: 0,
           y: 0,
           parentId: null,
@@ -205,10 +207,6 @@ function PracticeProblem({ darkMode }) {
     setActiveBlock(null);
   };
   
-  
-  
-  
-
   return (
     <DndContext
       onDragStart={(event) => {

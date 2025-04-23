@@ -14,12 +14,12 @@ const blockComponents = {
   add: AddBlock,
 };
 
-function BlockFactory({ block, children, positioning = 'absolute' }) {
+function BlockFactory({ block, children, positioning = 'absolute', allBlocks }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
     data: { ...block, from: 'rightArea' },
   });
-
+  console.log(block)
   const BlockComponent = blockComponents[block.type] || DraggableBlock;
 
   const style = {
@@ -41,7 +41,7 @@ function BlockFactory({ block, children, positioning = 'absolute' }) {
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <BlockComponent block={block}>{children}</BlockComponent>
+      <BlockComponent block={block} allBlocks={allBlocks}>{children}</BlockComponent>
     </div>
   );
 }

@@ -2,21 +2,44 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import BlockFactory from './BlockFactory';
 
-function IfBlock({ block, children }) {
+function IfBlock({ block, onBlockUpdate, children, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
-  const [nestedBlocks, setNestedBlocks] = useState(block.children || []);
+  const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
   const [nestingHeight, setNestingHeight] = useState(50); // Default height
 
   // Sync nestedBlocks with block.children prop
   useEffect(() => {
-    setNestedBlocks(block.children || []);
-  }, [block.children]);
+    setNestedBlocks(block.nestedBlocks || []);
+  }, [block.nestedBlocks]);
+
+  // Update nestedBlocks with full block data (instead of just IDs)
+  useEffect(() => {
+    // Convert the stored IDs in nestedBlocks to the full block objects
+    const updatedNestedBlocks = block.nestedBlocks.map(id => {
+      const blockData = allBlocks.find(b => b.id === id);  // Assuming you have access to all blocks
+      return blockData || {};  // Return full block data or empty object if not found
+    });
+
+    setNestedBlocks(updatedNestedBlocks);
+  }, [block.nestedBlocks, allBlocks]);
+
+  // Set childId of the main block to null if any nestedBlock has the same id as the main block
+  useEffect(() => {
+    const blockIsNested = nestedBlocks.some((nestedBlock) => nestedBlock.id === block.id);
+
+    // If the block is in nestedBlocks, set childId to null
+    if (blockIsNested) {
+      if (onBlockUpdate) {
+        onBlockUpdate(block.id, { ...block, childId: null });
+      }
+    }
+  }, [block, nestedBlocks, onBlockUpdate]);
 
   // Update nesting height based on content
   useEffect(() => {
     if (nestingRef.current) {
-      const height = nestingRef.current.scrollHeight;
+      const height = nestedBlocks.length*90;
       setNestingHeight(height > 0 ? height : 50); // Fallback to 50px if no content
     }
   }, [nestedBlocks]);
@@ -45,7 +68,7 @@ function IfBlock({ block, children }) {
 
   const nestingAreaStyle = {
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    height: `${nestingHeight}px`,
+    height: `${nestingHeight}px`, // This should control the height of the area
     padding: '8px',
     margin: '0 12px',
     position: 'relative',
@@ -54,7 +77,7 @@ function IfBlock({ block, children }) {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px', // Space between stacked blocks
-    overflow: 'hidden', // Prevent overflow outside the area
+    overflow: 'auto', // Allow overflow to be visible if nesting height is too small
   };
 
   const bottomSectionStyle = {

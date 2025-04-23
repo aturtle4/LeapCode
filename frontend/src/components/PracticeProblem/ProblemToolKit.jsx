@@ -3,12 +3,14 @@ import { Box, Tabs, Tab } from '@mui/material';
 import { useDraggable } from '@dnd-kit/core';
 
 // Draggable Block Component
-const ToolkitBlock = ({ id, label, category }) => {
+const ToolkitBlock = ({ id, label, category, type, canNest }) => {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
     data: {
       label,
       category, // Add category to data for better management
+      type,
+      canNest,
       from: 'toolkit', // Mark that it comes from the toolkit
     },
   });
@@ -53,30 +55,30 @@ function ProblemToolKit() {
 
   const blocks = {
     0: [ // Variables
-      { id: 'var1', label: 'Set Variable', category: 'variables', canNest: false },
-      { id: 'var2', label: 'Change Variable', category: 'variables', canNest: false},
-      { id: 'var3', label: 'Use Variable', category: 'variables', canNest: false },
+      { id: 'var1', label: 'Set Variable', type:'setVariable', category: 'variables', canNest: false },
+      { id: 'var2', label: 'Change Variable', type:'changeVariable',category: 'variables', canNest: false},
+      { id: 'var3', label: 'Use Variable', type:'useVariable',category: 'variables', canNest: false },
     ],
     1: [ // Flow
-      { id: 'flow1', label: 'Start', category: 'flow',canNest: false },
-      { id: 'flow2', label: 'End', category: 'flow',canNest: false },
-      { id: 'flow3', label: 'For Loop', category: 'flow',canNest: true },
-      { id: 'flow4', label: 'While Loop', category: 'flow',canNest: true },
+      { id: 'flow1', label: 'Start', type:'start',category: 'flow',canNest: false },
+      { id: 'flow2', label: 'End', type:'end',category: 'flow',canNest: false },
+      { id: 'flow3', label: 'For Loop', type:'forLoop',category: 'flow',canNest: true },
+      { id: 'flow4', label: 'While Loop', type:'whileLoop',category: 'flow',canNest: true },
     ],
     2: [ // Conditional Statements
-      { id: 'cond1', label: 'If', category: 'conditionals',canNest: true },
-      { id: 'cond2', label: 'Elif', category: 'conditionals',canNest: true },
-      { id: 'cond3', label: 'Else', category: 'conditionals',canNest: true },
+      { id: 'cond1', label: 'If', type:'if',category: 'conditionals',canNest: true },
+      { id: 'cond2', label: 'Elif', type:'elif',category: 'conditionals',canNest: true },
+      { id: 'cond3', label: 'Else', type:'else',category: 'conditionals',canNest: true },
     ],
     3: [ // Maths
-      { id: 'math1', label: 'Add', category: 'math',canNest: false },
-      { id: 'math2', label: 'Subtract', category: 'math',canNest: false },
-      { id: 'math3', label: 'Multiply', category: 'math',canNest: false },
-      { id: 'math4', label: 'Divide', category: 'math',canNest: false },
+      { id: 'math1', label: 'Add', type:'add',category: 'math',canNest: false },
+      { id: 'math2', label: 'Subtract', type:'substract',category: 'math',canNest: false },
+      { id: 'math3', label: 'Multiply', type:'multiply',category: 'math',canNest: false },
+      { id: 'math4', label: 'Divide', type:'divide',category: 'math',canNest: false },
     ],
     4: [ // Functions
-      { id: 'func1', label: 'Create Function', category: 'functions', canNest: true},
-      { id: 'func2', label: 'Call Function', category: 'functions', canNest: false },
+      { id: 'func1', label: 'Create Function', type:'createFunc',category: 'functions', canNest: true},
+      { id: 'func2', label: 'Call Function', type:'callFunc',category: 'functions', canNest: false },
     ],
   };
 
@@ -124,7 +126,7 @@ function ProblemToolKit() {
           whiteSpace: 'nowrap', 
         }}>
         {blocks[activeTab].map((block) => (
-          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} />
+          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} type={block.type} canNest={block.canNest}/>
         ))}
       </Box>
     </Box>

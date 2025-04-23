@@ -2,6 +2,7 @@ import React from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { backdropClasses } from '@mui/material';
 import DraggableBlock from './DraggableBlock';
+import BlockFactory from '../../components/Blocks/BlockFactory'
 
 
 function ProblemRightDraggableArea({ droppedBlocks }) {
@@ -22,10 +23,11 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
     >
       {droppedBlocks.length > 0 ? (
         droppedBlocks.map((block) => (
-          <DraggableBlock
-            key={block.id}
-            block={block}
-          />
+          // <DraggableBlock
+          //   key={block.id}
+          //   block={block}
+          // />
+          <BlockFactory key={block.id} block={block} allBlocks={droppedBlocks}/>
         ))
       ) : (
         <p></p>
