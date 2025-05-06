@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import BlockFactory from './BlockFactory';
 
-function IfBlock({ block, allBlocks }) {
+function WhileBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
   const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
   const [nestingHeight, setNestingHeight] = useState(50); // Default height for nesting area
-  const isUnconnected = !block.parentId && !block.childId;
 
   // Sync nestedBlocks with the block's nestedBlocks (now always objects)
   useEffect(() => {
@@ -26,10 +25,9 @@ function IfBlock({ block, allBlocks }) {
 
   const style = {
     width: '220px',
-    backgroundColor: block.color || '#E74C3C',
+    backgroundColor: block.color || '#3498DB',
     color: 'white',
     borderRadius: '8px',
-    opacity: isUnconnected ? 0.6 : 1, 
     padding: '0',
   };
 
@@ -106,4 +104,4 @@ function IfBlock({ block, allBlocks }) {
   );
 }
 
-export default IfBlock;
+export default WhileBlock;

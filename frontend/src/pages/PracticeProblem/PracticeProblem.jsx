@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
 import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
 import { DndContext, DragOverlay } from '@dnd-kit/core';
+import DragOverlayComponent from "../../components/PracticeProblem/DragOverlay";
 
 function PracticeProblem({ darkMode }) {
   const navigate = useNavigate();
@@ -397,13 +398,7 @@ function PracticeProblem({ darkMode }) {
           </Box>
         </Box>
       </Box>
-      <DragOverlay zIndex={1000}>
-        {activeBlock ? (
-          <Box sx={{ padding: '8px 12px', backgroundColor: '#7B61FF', color: '#fff', borderRadius: '8px', fontWeight: 'bold' }}>
-            {activeBlock.label}
-          </Box>
-        ) : null}
-      </DragOverlay>
+      <DragOverlayComponent activeBlock={activeBlock} allBlocks={droppedBlocks} />
     </DndContext>
   );
 }

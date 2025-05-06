@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import BlockFactory from './BlockFactory';
 
-function IfBlock({ block, allBlocks }) {
+function ElseBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
   const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
@@ -27,9 +27,9 @@ function IfBlock({ block, allBlocks }) {
   const style = {
     width: '220px',
     backgroundColor: block.color || '#E74C3C',
+    opacity: isUnconnected ? 0.6 : 1,
     color: 'white',
     borderRadius: '8px',
-    opacity: isUnconnected ? 0.6 : 1, 
     padding: '0',
   };
 
@@ -106,4 +106,4 @@ function IfBlock({ block, allBlocks }) {
   );
 }
 
-export default IfBlock;
+export default ElseBlock;

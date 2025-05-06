@@ -3,7 +3,7 @@ import { Box, Tabs, Tab } from '@mui/material';
 import { useDraggable } from '@dnd-kit/core';
 
 // Draggable Block Component
-const ToolkitBlock = React.memo(({ id, label, category, type, canNest }) => {
+const ToolkitBlock = React.memo(({ id, label, category, type, canNest, tabColor }) => {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
     data: {
@@ -22,7 +22,7 @@ const ToolkitBlock = React.memo(({ id, label, category, type, canNest }) => {
       {...attributes}
       style={{
         padding: '10px 16px',
-        backgroundColor: '#7B61FF',
+        backgroundColor: tabColor,
         color: 'white',
         marginBottom: '12px',
         marginRight: '12px',
@@ -126,7 +126,7 @@ function ProblemToolKit() {
           whiteSpace: 'nowrap', 
         }}>
         {blocks[activeTab].map((block) => (
-          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} type={block.type} canNest={block.canNest}/>
+          <ToolkitBlock key={block.id} id={block.id} label={block.label} category={block.category} type={block.type} canNest={block.canNest} tabColor={tabStyles[activeTab].activeColor}/>
         ))}
       </Box>
     </Box>

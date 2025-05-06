@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 function AddBlock({ block }) {
   const [left, setLeft] = useState(block.left || '');
   const [right, setRight] = useState(block.right || '');
+  const isUnconnected = !block.parentId && !block.childId;
 
   const style = {
     padding: '8px 12px',
@@ -12,6 +13,7 @@ function AddBlock({ block }) {
     borderRadius: '5px',
     display: 'flex',
     flexDirection: 'column',
+    opacity: isUnconnected ? 0.6 : 1,
     gap: '4px',
   };
 

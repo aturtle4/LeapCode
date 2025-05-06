@@ -5,6 +5,17 @@ import IfBlock from './IfBlock';
 import ForLoopBlock from './ForLoopBlock';
 import AddBlock from './AddBlock';
 import DraggableBlock from '../PracticeProblem/DraggableBlock';
+import WhileBlock from './WhileBlock';
+import StartBlock from './StartBlock';
+import EndBlock from './EndBlock';
+import ChangeVariableBlock from './ChangeVariableBlock';
+import ForBlock from './ForBlock';
+import UseVariableBlock from './UseVariableBlock';
+import SubtractBlock from './SubtractBlock';
+import MultiplyBlock from './MultiplyBlock';
+import DivideBlock from './DivideBlock';
+import ElifBlock from './ElifBlock';
+import ElseBlock from './ElseBlock';
 
 const blockComponents = {
   setVariable: SetVarBlock,
@@ -12,6 +23,17 @@ const blockComponents = {
   if: IfBlock,
   forLoop: ForLoopBlock,
   add: AddBlock,
+  whileLoop: WhileBlock,
+  start: StartBlock,
+  end: EndBlock,
+  changeVariable: ChangeVariableBlock,
+  forLoop: ForBlock,
+  useVariable: UseVariableBlock,
+  subtract: SubtractBlock,
+  multiply: MultiplyBlock,
+  divide: DivideBlock,
+  elif: ElifBlock,
+  else: ElseBlock,
 };
 
 function BlockFactory({ block, children, positioning = 'absolute', allBlocks }) {

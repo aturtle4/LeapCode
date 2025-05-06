@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function SetVarBlock({ block }) {
+function ChangeVariableBlock({ block }) {
   const [name, setName] = useState(block.name || '');
   const [value, setValue] = useState(block.value || '');
   const isUnconnected = !block.parentId && !block.childId;
@@ -11,10 +11,10 @@ function SetVarBlock({ block }) {
     color: 'white',
     width: '150px',
     borderRadius: '5px',
+    opacity: isUnconnected ? 0.6 : 1,
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
-    opacity: isUnconnected ? 0.6 : 1,
   };
 
   return (
@@ -50,4 +50,4 @@ function SetVarBlock({ block }) {
   );
 }
 
-export default SetVarBlock;
+export default ChangeVariableBlock;
