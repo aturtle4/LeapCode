@@ -4,20 +4,14 @@ import BlockFactory from './BlockFactory';
 
 function IfBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
-  const [nestedBlocks, setNestedBlocks] = useState([]);
+  const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
   const [nestingHeight, setNestingHeight] = useState(50); // Default height for nesting area
 
-  // Sync nestedBlocks with the block's nestedBlocks and resolve block IDs to block data
+  // Sync nestedBlocks with the block's nestedBlocks (now always objects)
   useEffect(() => {
-    // If nestedBlocks contains IDs, resolve those to full block data
-    const resolvedNestedBlocks = block.nestedBlocks.map((id) => {
-      const fullBlockData = allBlocks.find(b => b.id === id);
-      return fullBlockData || {}; // Return block data or empty object if not found
-    });
-
-    setNestedBlocks(resolvedNestedBlocks);
-  }, [block.nestedBlocks, allBlocks]);
+    setNestedBlocks(block.nestedBlocks || []);
+  }, [block.nestedBlocks]);
 
   // Adjust nesting area height based on nested blocks count
   useEffect(() => {

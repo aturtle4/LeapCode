@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
 import { useDraggable } from '@dnd-kit/core';
 
 // Draggable Block Component
-const ToolkitBlock = ({ id, label, category, type, canNest }) => {
+const ToolkitBlock = React.memo(({ id, label, category, type, canNest }) => {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
     data: {
@@ -36,7 +36,7 @@ const ToolkitBlock = ({ id, label, category, type, canNest }) => {
       {label}
     </div>
   );
-};
+});
 
 function ProblemToolKit() {
   const [activeTab, setActiveTab] = useState(0);
@@ -72,7 +72,7 @@ function ProblemToolKit() {
     ],
     3: [ // Maths
       { id: 'math1', label: 'Add', type:'add',category: 'math',canNest: false },
-      { id: 'math2', label: 'Subtract', type:'substract',category: 'math',canNest: false },
+      { id: 'math2', label: 'Subtract', type:'subtract',category: 'math',canNest: false },
       { id: 'math3', label: 'Multiply', type:'multiply',category: 'math',canNest: false },
       { id: 'math4', label: 'Divide', type:'divide',category: 'math',canNest: false },
     ],

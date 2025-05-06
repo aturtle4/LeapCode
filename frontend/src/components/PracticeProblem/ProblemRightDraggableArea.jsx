@@ -30,7 +30,9 @@ function ProblemRightDraggableArea({ droppedBlocks }) {
           <BlockFactory key={block.id} block={block} allBlocks={droppedBlocks}/>
         ))
       ) : (
-        <p></p>
+        <p style={{ color: '#999', textAlign: 'center', marginTop: '20px' }}>
+          Drag blocks here 
+        </p>
       )}
     </div>
   );

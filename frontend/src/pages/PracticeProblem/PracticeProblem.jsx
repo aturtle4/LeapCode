@@ -19,19 +19,6 @@ function PracticeProblem({ darkMode }) {
   const handleRun = () => {
     console.log(droppedBlocks)
   };
-  const collectChildren = (blockId, blocksMap) => {
-    const chain = [];
-    let current = blocksMap[blockId];
-  
-    while (current?.childId) {
-      const child = blocksMap[current.childId];
-      if (!child) break;
-      chain.push(child);
-      current = child;
-    }
-  
-    return chain;
-  };
   
 
   const handleDragEnd = (event) => {
@@ -49,6 +36,48 @@ function PracticeProblem({ darkMode }) {
       const snapDistance = 50;
       const generateId = () => `block-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const blocksCopy = [...prev];
+      
+      if (over.id.startsWith('nesting-')) {
+        const parentId = over.id.replace('nesting-', '');
+        const parentBlock = blocksCopy.find((b) => b.id === parentId);
+        if (!parentBlock || !parentBlock.canNest) return blocksCopy;
+  
+        if (isFromToolkit) {
+          const newId = generateId();
+          const newBlock = {
+            id: newId,
+            label: active.data.current.label,
+            type: active.data.current.type,
+            x: 0,
+            y: 0,
+            parentId,
+            childId: null,
+            canNest: active.data.current.canNest || false,
+            nestedBlocks: [],
+            positioning: 'static',
+          };
+          // Only add if not already nested (by id)
+          const isAlreadyNested = (parentBlock.nestedBlocks || []).some(b => b.id === newId);
+          if (!isAlreadyNested) {
+            parentBlock.nestedBlocks = [...(parentBlock.nestedBlocks || []), newBlock];
+            return [...blocksCopy, newBlock];
+          }
+          return blocksCopy;
+        } else {
+          const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
+          if (blockIndex === -1) return blocksCopy;
+          // Only add if not already nested (by id)
+          const isAlreadyNested = (parentBlock.nestedBlocks || []).some(b => b.id === active.id);
+          if (!isAlreadyNested) {
+            const movedBlock = { ...blocksCopy[blockIndex], parentId, positioning: 'static' };
+            parentBlock.nestedBlocks = [...(parentBlock.nestedBlocks || []), movedBlock];
+            // Remove the block from the top-level array
+            const filteredBlocks = blocksCopy.filter(b => b.id !== active.id);
+            return [...filteredBlocks];
+          }
+          return blocksCopy;
+        }
+      }
   
       const findSnapTarget = (movedBlock, skipId = null) => {
         let snapTo = null;
@@ -110,7 +139,6 @@ function PracticeProblem({ darkMode }) {
   
       if (isFromToolkit) {
         const newId = generateId();
-        console.log(active.data.current)
         const newBlock = {
           id: newId,
           label: active.data.current.label,
@@ -206,7 +234,6 @@ function PracticeProblem({ darkMode }) {
   
     setActiveBlock(null);
   };
-  
   return (
     <DndContext
       onDragStart={(event) => {

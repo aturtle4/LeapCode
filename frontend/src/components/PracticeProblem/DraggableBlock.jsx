@@ -28,6 +28,8 @@ function DraggableBlock({ block, onPositionChange }) {
     borderRadius: '5px',
     cursor: 'grab',
     transition: isDragging ? 'none' : 'transform 0.2s ease',
+    boxShadow: isDragging ? '0 4px 10px rgba(0,0,0,0.2)' : undefined,
+    zIndex: isDragging ? 999 : 1,
   };
 
   return (
