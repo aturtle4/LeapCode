@@ -7,7 +7,6 @@ function IfBlock({ block, allBlocks }) {
   const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
   const [nestingHeight, setNestingHeight] = useState(50); // Default height for nesting area
-  const isUnconnected = !block.parentId && !block.childId;
 
   // Sync nestedBlocks with the block's nestedBlocks (now always objects)
   useEffect(() => {
@@ -26,10 +25,9 @@ function IfBlock({ block, allBlocks }) {
 
   const style = {
     width: '220px',
-    backgroundColor: block.color || '#E74C3C',
+    backgroundColor: block.color || '#3498DB',
     color: 'white',
     borderRadius: '8px',
-    opacity: isUnconnected ? 0.6 : 1, 
     padding: '0',
   };
 
@@ -67,13 +65,19 @@ function IfBlock({ block, allBlocks }) {
 
   return (
     <div style={style}>
-      <div style={topSectionStyle}>
+      <div 
+        style={topSectionStyle} 
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div style={{ fontWeight: 'bold' }}>{block.label}</div>
         <input
           type="text"
           placeholder="Condition (e.g., x > 0)"
           value={condition}
           onChange={(e) => setCondition(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             width: '100%',
             padding: '4px',

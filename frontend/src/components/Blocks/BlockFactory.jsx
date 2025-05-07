@@ -40,9 +40,24 @@ function BlockFactory({ block, children, positioning = 'absolute', allBlocks }) 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
     data: { ...block, from: 'rightArea' },
+    modifiers: {
+      threshold: {
+        distance: 10,
+      },
+    },
   });
-  console.log(block)
+  
   const BlockComponent = blockComponents[block.type] || DraggableBlock;
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleMouseDown = (e) => {
+    if (block.canNest) {
+      setTimeout(() => {}, 100);
+    }
+  };
 
   const style = {
     ...(positioning === 'absolute'
@@ -62,7 +77,7 @@ function BlockFactory({ block, children, positioning = 'absolute', allBlocks }) 
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} onClick={handleClick} onMouseDown={handleMouseDown}>
       <BlockComponent block={block} allBlocks={allBlocks}>{children}</BlockComponent>
     </div>
   );

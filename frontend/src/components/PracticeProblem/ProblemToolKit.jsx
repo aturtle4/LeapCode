@@ -12,6 +12,7 @@ const ToolkitBlock = React.memo(({ id, label, category, type, canNest, tabColor 
       type,
       canNest,
       from: 'toolkit', // Mark that it comes from the toolkit
+      color: tabColor, // Add color information for consistent styling
     },
   });
 

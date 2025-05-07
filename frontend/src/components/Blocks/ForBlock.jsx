@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import BlockFactory from './BlockFactory';
 
-function WhileBlock({ block, allBlocks }) {
+function ForBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
   const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
   const nestingRef = useRef(null);
@@ -104,4 +104,4 @@ function WhileBlock({ block, allBlocks }) {
   );
 }
 
-export default WhileBlock;
+export default ForBlock;

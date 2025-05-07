@@ -4,7 +4,7 @@ import { ArrowBack, PlayArrow, CheckCircle, AccountCircle } from "@mui/icons-mat
 import { useNavigate, useParams } from "react-router-dom";
 import ProblemToolKit from '../../components/PracticeProblem/ProblemToolKit';
 import ProblemRightDraggableArea from "../../components/PracticeProblem/ProblemRightDraggableArea";
-import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { DndContext, DragOverlay, pointerWithin, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import DragOverlayComponent from "../../components/PracticeProblem/DragOverlay";
 
 function PracticeProblem({ darkMode }) {
@@ -13,37 +13,123 @@ function PracticeProblem({ darkMode }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [droppedBlocks, setDroppedBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
+  
+  // Configure sensors with strict activation constraints
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      // A pointer must move by at least 15px before drag starts
+      activationConstraint: {
+        distance: 15,
+        // Add a small delay to prevent accidental drags
+        delay: 150,
+        // Tolerance for movement during the delay
+        tolerance: 5,
+      },
+    })
+  );
+
+  // Function to find a block by ID in the entire block structure
+  const findBlockById = (blocks, id) => {
+    if (!id || !blocks || !Array.isArray(blocks)) return null;
+    
+    for (const block of blocks) {
+      if (!block) continue;
+      if (block.id === id) return block;
+      
+      // Check in nested blocks if they exist
+      if (block.nestedBlocks && block.nestedBlocks.length > 0) {
+        const nestedResult = findBlockById(block.nestedBlocks, id);
+        if (nestedResult) return nestedResult;
+      }
+    }
+    return null;
+  };
 
   const handleTabChange = (event, newIndex) => {
     setTabIndex(newIndex);
   };
   const handleRun = () => {
-    console.log(droppedBlocks)
+    logNestedBlockStructure(droppedBlocks);
+    console.log(droppedBlocks);
   };
   
-
+  // Helper function to log the nested block structure for debugging
+  const logNestedBlockStructure = (blocks, level = 0) => {
+    if (!blocks || !Array.isArray(blocks)) return;
+    
+    blocks.forEach(block => {
+      const indent = '  '.repeat(level);
+      console.log(`${indent}Block: ${block.id} (${block.label}) - Type: ${block.type}`);
+      
+      if (block.nestedBlocks && block.nestedBlocks.length > 0) {
+        console.log(`${indent}Nested blocks of ${block.id}:`);
+        logNestedBlockStructure(block.nestedBlocks, level + 1);
+      }
+    });
+  };
+  
   const handleDragEnd = (event) => {
-    const { active, over } = event;
+    const { active, over, delta } = event;
+    
+    // Check if the drag was too small (possibly just a click)
+    const isSmallDrag = Math.abs(delta.x) < 5 && Math.abs(delta.y) < 5;
+    
+    // If it's a small drag on a block that's not from toolkit, treat as a click
+    if (isSmallDrag && active.data.current?.from !== 'toolkit') {
+      setActiveBlock(null);
+      return;
+    }
   
     if (!over) {
-      setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
+      // If dropping outside any droppable area, remove from droppedBlocks if it's from workspace
+      if (active.data.current?.from !== 'toolkit') {
+        setDroppedBlocks((prev) => prev.filter((block) => block.id !== active.id));
+      }
+      setActiveBlock(null);
       return;
     }
   
     const isFromToolkit = active.data.current?.from === 'toolkit';
-  
+    
     setDroppedBlocks((prev) => {
+      const blocksCopy = JSON.parse(JSON.stringify(prev)); // Deep copy to avoid reference issues
       const blockHeight = 90;
       const snapDistance = 50;
       const generateId = () => `block-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const blocksCopy = [...prev];
       
+      // Function to update a block anywhere in the tree structure
+      const updateBlockInTree = (blocks, updatedBlock) => {
+        return blocks.map(block => {
+          if (block.id === updatedBlock.id) {
+            return updatedBlock;
+          }
+          
+          // Check in nested blocks
+          if (block.nestedBlocks && block.nestedBlocks.length > 0) {
+            return {
+              ...block,
+              nestedBlocks: updateBlockInTree(block.nestedBlocks, updatedBlock)
+            };
+          }
+          
+          return block;
+        });
+      };
+
+      // Handle drops into nesting areas (if, for, while blocks)
       if (over.id.startsWith('nesting-')) {
         const parentId = over.id.replace('nesting-', '');
-        const parentBlock = blocksCopy.find((b) => b.id === parentId);
+        const parentBlock = findBlockById(blocksCopy, parentId);
+        
         if (!parentBlock || !parentBlock.canNest) return blocksCopy;
+        
+        // Initialize nestedBlocks if it doesn't exist
+        if (!parentBlock.nestedBlocks) {
+          parentBlock.nestedBlocks = [];
+        }
   
         if (isFromToolkit) {
+          // Create a new block from toolkit
           const newId = generateId();
           const newBlock = {
             id: newId,
@@ -56,30 +142,62 @@ function PracticeProblem({ darkMode }) {
             canNest: active.data.current.canNest || false,
             nestedBlocks: [],
             positioning: 'static',
+            color: active.data.current.color,
           };
-          // Only add if not already nested (by id)
-          const isAlreadyNested = (parentBlock.nestedBlocks || []).some(b => b.id === newId);
-          if (!isAlreadyNested) {
-            parentBlock.nestedBlocks = [...(parentBlock.nestedBlocks || []), newBlock];
-            return [...blocksCopy, newBlock];
-          }
-          return blocksCopy;
+          
+          // Add to parent's nestedBlocks
+          parentBlock.nestedBlocks.push(newBlock);
+          
+          // Return a new state with both updated parent block and new block
+          return blocksCopy.map(block => 
+            block.id === parentId ? parentBlock : block
+          );
         } else {
-          const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
-          if (blockIndex === -1) return blocksCopy;
-          // Only add if not already nested (by id)
-          const isAlreadyNested = (parentBlock.nestedBlocks || []).some(b => b.id === active.id);
-          if (!isAlreadyNested) {
-            const movedBlock = { ...blocksCopy[blockIndex], parentId, positioning: 'static' };
-            parentBlock.nestedBlocks = [...(parentBlock.nestedBlocks || []), movedBlock];
-            // Remove the block from the top-level array
-            const filteredBlocks = blocksCopy.filter(b => b.id !== active.id);
-            return [...filteredBlocks];
+          // Moving an existing block into a nesting area
+          const blockToMove = findBlockById(blocksCopy, active.id);
+          if (!blockToMove) return blocksCopy;
+          
+          // Skip if block is already nested in this parent
+          const isAlreadyNested = parentBlock.nestedBlocks && parentBlock.nestedBlocks.some(block => block.id === active.id);
+          if (isAlreadyNested) return blocksCopy;
+          
+          // Create a deep copy to preserve nested blocks structure
+          const movedBlockCopy = JSON.parse(JSON.stringify(blockToMove));
+          // Update properties for nesting
+          movedBlockCopy.parentId = parentId;
+          movedBlockCopy.positioning = 'static';
+          
+          // Add to parent's nestedBlocks
+          parentBlock.nestedBlocks.push(movedBlockCopy);
+          
+          // Update the parent block in the blocksCopy
+          let updatedBlocks = blocksCopy.map(block => 
+            block.id === parentId ? parentBlock : block
+          );
+          
+          // If block to move was at top level, remove it
+          if (!blockToMove.parentId) {
+            return updatedBlocks.filter(block => block.id !== active.id);
+          } 
+          // If it was in another parent, remove from that parent's nested blocks
+          else {
+            const oldParent = findBlockById(updatedBlocks, blockToMove.parentId);
+            if (oldParent && oldParent.nestedBlocks) {
+              oldParent.nestedBlocks = oldParent.nestedBlocks.filter(block => 
+                block.id !== active.id
+              );
+              
+              return updatedBlocks.map(block => 
+                block.id === oldParent.id ? oldParent : block
+              );
+            }
           }
-          return blocksCopy;
+          
+          return updatedBlocks;
         }
       }
   
+      // Handle snapping logic for top-level blocks
       const findSnapTarget = (movedBlock, skipId = null) => {
         let snapTo = null;
         let snappedY = movedBlock.y;
@@ -89,6 +207,9 @@ function PracticeProblem({ darkMode }) {
   
         for (const block of blocksCopy) {
           if (block.id === skipId) continue;
+          
+          // Don't snap to nested blocks
+          if (block.parentId) continue;
   
           const distanceAbove = Math.abs(movedBlock.y - (block.y + blockHeight));
           const distanceBelow = Math.abs(movedBlock.y - (block.y - blockHeight));
@@ -100,6 +221,7 @@ function PracticeProblem({ darkMode }) {
             direction = 'below';
             minDistance = distanceAbove;
           }
+          
           if (distanceBelow <= snapDistance && distanceBelow < minDistance) {
             snappedY = block.y - blockHeight;
             snappedX = block.x;
@@ -116,40 +238,34 @@ function PracticeProblem({ darkMode }) {
         let updatedSnapTo = { ...snapTo };
         let updatedMovedBlock = { ...movedBlock };
   
-        if (!updatedSnapTo.canNest) updatedSnapTo.nestedBlocks = [];
-        if (!updatedMovedBlock.canNest) updatedMovedBlock.nestedBlocks = [];
+        if (!updatedSnapTo.nestedBlocks) updatedSnapTo.nestedBlocks = [];
+        if (!updatedMovedBlock.nestedBlocks) updatedMovedBlock.nestedBlocks = [];
   
         if (direction === 'above') {
           updatedMovedBlock.childId = updatedSnapTo.id;
           updatedSnapTo.parentId = updatedMovedBlock.id;
-  
-          if (updatedMovedBlock.canNest) {
-            updatedMovedBlock.nestedBlocks = [...new Set([...(updatedMovedBlock.nestedBlocks || []), updatedSnapTo.id])];
-          }
         } else if (direction === 'below') {
           updatedMovedBlock.parentId = updatedSnapTo.id;
           updatedSnapTo.childId = updatedMovedBlock.id;
-  
-          if (updatedSnapTo.canNest) {
-            updatedSnapTo.nestedBlocks = [...new Set([...(updatedSnapTo.nestedBlocks || []), updatedMovedBlock.id])];
-          }
         }
   
         return { updatedMovedBlock, updatedSnapTo };
       };
   
-      if (isFromToolkit) {
+      if (isFromToolkit && over.id === 'droppable-area') {
+        // Creating a new block from toolkit in the main area
         const newId = generateId();
         const newBlock = {
           id: newId,
           label: active.data.current.label,
           type: active.data.current.type,
-          x: 0,
-          y: 0,
+          x: event.over.rect ? event.clientX - 50 : 50,
+          y: event.over.rect ? event.clientY - 50 : 50,
           parentId: null,
           childId: null,
           canNest: active.data.current.canNest || false,
           nestedBlocks: [],
+          color: active.data.current.color,
         };
   
         const { snapTo, snappedX, snappedY, direction } = findSnapTarget(newBlock);
@@ -158,6 +274,7 @@ function PracticeProblem({ darkMode }) {
   
         if (snapTo && direction) {
           const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(newBlock, snapTo, direction);
+          
           return [
             ...blocksCopy.map(b => (b.id === updatedSnapTo.id ? updatedSnapTo : b)),
             updatedMovedBlock,
@@ -165,87 +282,156 @@ function PracticeProblem({ darkMode }) {
         }
   
         return [...blocksCopy, newBlock];
-      }
-  
-      // Existing block being moved
-      const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
-      if (blockIndex === -1) return blocksCopy;
-  
-      const deltaX = event.delta.x;
-      const deltaY = event.delta.y;
-  
-      const movedBlock = { ...blocksCopy[blockIndex] };
-      movedBlock.x += deltaX;
-      movedBlock.y += deltaY;
-  
-      // Move children recursively
-      const blocksMap = Object.fromEntries(blocksCopy.map(b => [b.id, { ...b }]));
-      let current = blocksMap[movedBlock.id];
-  
-      while (current?.childId) {
-        const child = blocksMap[current.childId];
-        if (!child) break;
-        child.x += deltaX;
-        child.y += deltaY;
-        current = child;
-      }
-  
-      // Update blocksCopy with new positions
-      for (const id in blocksMap) {
-        const updatedIndex = blocksCopy.findIndex(b => b.id === id);
-        if (updatedIndex !== -1) {
-          blocksCopy[updatedIndex] = blocksMap[id];
+      } else if (!isFromToolkit && over.id === 'droppable-area') {
+        // Moving existing block to a new position in the main area
+        const blockToMove = findBlockById(blocksCopy, active.id);
+        if (!blockToMove) return blocksCopy;
+        
+        // Skip if it's a nested block - handle differently
+        if (blockToMove.parentId && blockToMove.positioning === 'static') {
+          // Move from nested position to main area
+          const oldParent = findBlockById(blocksCopy, blockToMove.parentId);
+          
+          if (oldParent && oldParent.nestedBlocks) {
+            // Create a deep copy of the block to maintain its nested structure
+            const nestedBlockCopy = JSON.parse(JSON.stringify(blockToMove));
+            
+            // Create a new version of the block for the main area
+            const newMainBlock = {
+              ...nestedBlockCopy,
+              parentId: null,
+              positioning: 'absolute',
+              x: event.over.rect ? event.clientX - 50 : 50,
+              y: event.over.rect ? event.clientY - 50 : 50,
+            };
+            
+            // Remove from old parent's nestedBlocks
+            oldParent.nestedBlocks = oldParent.nestedBlocks.filter(b => b.id !== blockToMove.id);
+            
+            // Update the old parent in the state
+            const updatedWithParent = blocksCopy.map(b => 
+              b.id === oldParent.id ? oldParent : b
+            );
+            
+            // Apply snapping
+            const { snapTo, snappedX, snappedY, direction } = findSnapTarget(newMainBlock);
+            newMainBlock.x = snappedX;
+            newMainBlock.y = snappedY;
+            
+            if (snapTo && direction) {
+              const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(newMainBlock, snapTo, direction);
+              const updatedBlocks = updatedWithParent.map(b => 
+                b.id === updatedSnapTo.id ? updatedSnapTo : b
+              );
+              return [...updatedBlocks, updatedMovedBlock];
+            }
+            
+            return [...updatedWithParent, newMainBlock];
+          }
         }
-      }
+        
+        // Regular movement in main area
+        const blockIndex = blocksCopy.findIndex((b) => b.id === active.id);
+        if (blockIndex === -1) return blocksCopy;
   
-      // Remove from previous parent's nested list
-      if (movedBlock.parentId) {
-        const oldParentIndex = blocksCopy.findIndex((b) => b.id === movedBlock.parentId);
-        if (oldParentIndex !== -1) {
-          const oldParent = { ...blocksCopy[oldParentIndex] };
-          oldParent.nestedBlocks = oldParent.nestedBlocks?.filter((nid) => nid !== movedBlock.id);
-          if (oldParent.childId === movedBlock.id) oldParent.childId = null;
-          blocksCopy[oldParentIndex] = oldParent;
+        const deltaX = event.delta.x;
+        const deltaY = event.delta.y;
+  
+        const movedBlock = { ...blocksCopy[blockIndex] };
+        movedBlock.x += deltaX;
+        movedBlock.y += deltaY;
+        
+        // Preserve nested blocks when moving
+        if (blocksCopy[blockIndex].nestedBlocks) {
+          movedBlock.nestedBlocks = JSON.parse(JSON.stringify(blocksCopy[blockIndex].nestedBlocks));
         }
+  
+        // Remove from previous connections
+        if (movedBlock.parentId) {
+          const oldParentIndex = blocksCopy.findIndex((b) => b.id === movedBlock.parentId);
+          if (oldParentIndex !== -1) {
+            const oldParent = { ...blocksCopy[oldParentIndex] };
+            if (oldParent.childId === movedBlock.id) oldParent.childId = null;
+            blocksCopy[oldParentIndex] = oldParent;
+          }
+        }
+        
+        if (movedBlock.childId) {
+          const oldChildIndex = blocksCopy.findIndex((b) => b.id === movedBlock.childId);
+          if (oldChildIndex !== -1) {
+            const oldChild = { ...blocksCopy[oldChildIndex] };
+            if (oldChild.parentId === movedBlock.id) oldChild.parentId = null;
+            blocksCopy[oldChildIndex] = oldChild;
+          }
+        }
+  
+        movedBlock.parentId = null;
+        movedBlock.childId = null;
+  
+        const { snapTo, snappedX, snappedY, direction } = findSnapTarget(movedBlock, movedBlock.id);
+        movedBlock.x = snappedX;
+        movedBlock.y = snappedY;
+  
+        blocksCopy[blockIndex] = movedBlock;
+  
+        if (snapTo && direction) {
+          const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(movedBlock, snapTo, direction);
+  
+          return blocksCopy.map((b) =>
+            b.id === updatedMovedBlock.id
+              ? updatedMovedBlock
+              : b.id === updatedSnapTo.id
+                ? updatedSnapTo
+                : b
+          );
+        }
+  
+        return blocksCopy;
       }
-  
-      movedBlock.parentId = null;
-      movedBlock.childId = null;
-  
-      const { snapTo, snappedX, snappedY, direction } = findSnapTarget(movedBlock, movedBlock.id);
-      movedBlock.x = snappedX;
-      movedBlock.y = snappedY;
-  
-      let updatedBlocks = blocksCopy.map((b) => (b.id === movedBlock.id ? movedBlock : b));
-  
-      if (snapTo && direction) {
-        const { updatedMovedBlock, updatedSnapTo } = applySnapRelationship(movedBlock, snapTo, direction);
-  
-        updatedBlocks = updatedBlocks.map((b) =>
-          b.id === updatedMovedBlock.id
-            ? updatedMovedBlock
-            : b.id === updatedSnapTo.id
-            ? updatedSnapTo
-            : b
-        );
-      }
-  
-      return updatedBlocks;
+      
+      return blocksCopy;
     });
   
     setActiveBlock(null);
   };
+
   return (
     <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
       onDragStart={(event) => {
         const { active } = event;
+        const activeBlockData = findBlockById(droppedBlocks, active.id);
         setActiveBlock({
           id: active.id,
           label: active.data.current.label,
+          from: active.data.current.from,
+          type: active.data.current.type,
+          parentId: activeBlockData?.parentId,
+          initialMousePosition: {
+            x: event.activatorEvent.clientX,
+            y: event.activatorEvent.clientY
+          }
         });
       }}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveBlock(null)}
+      measuring={{
+        draggable: {
+          minimum: 10,
+        }
+      }}
+      modifiers={{
+        threshold: {
+          delay: 200,
+          tolerance: 10,
+        }
+      }}
+      activationConstraint={{
+        distance: 15,
+        delay: 200,
+        tolerance: 10,
+      }}
     >
       <Box
         sx={{
