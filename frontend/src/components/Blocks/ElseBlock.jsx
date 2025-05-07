@@ -1,27 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import BlockFactory from './BlockFactory';
+import React, { useState, useEffect } from 'react';
+import NestableArea from './NestableArea';
 
 function ElseBlock({ block, allBlocks }) {
   const [condition, setCondition] = useState(block.condition || '');
   const [nestedBlocks, setNestedBlocks] = useState(block.nestedBlocks || []);
-  const nestingRef = useRef(null);
-  const [nestingHeight, setNestingHeight] = useState(50); // Default height for nesting area
 
   // Sync nestedBlocks with the block's nestedBlocks (now always objects)
   useEffect(() => {
     setNestedBlocks(block.nestedBlocks || []);
   }, [block.nestedBlocks]);
-
-  // Adjust nesting area height based on nested blocks count
-  useEffect(() => {
-    const newHeight = nestedBlocks.length * 90; // 90px per nested block
-    setNestingHeight(newHeight > 0 ? newHeight : 50); // Fallback to 50px if no content
-  }, [nestedBlocks]);
-
-  const { setNodeRef: droppableRef } = useDroppable({
-    id: `nesting-${block.id}`, // Unique id for droppable area
-  });
 
   const style = {
     width: '220px',
@@ -41,20 +28,6 @@ function ElseBlock({ block, allBlocks }) {
     gap: '4px',
   };
 
-  const nestingAreaStyle = {
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    height: `${nestingHeight}px`, // Dynamic height based on nested blocks
-    padding: '8px',
-    margin: '0 12px',
-    position: 'relative',
-    borderLeft: '2px dashed rgba(255, 255, 255, 0.3)',
-    borderRight: '2px dashed rgba(255, 255, 255, 0.3)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px', // Space between nested blocks
-    overflow: 'auto', // Ensure overflow is visible
-  };
-
   const bottomSectionStyle = {
     padding: '4px 12px',
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
@@ -65,13 +38,19 @@ function ElseBlock({ block, allBlocks }) {
 
   return (
     <div style={style}>
-      <div style={topSectionStyle}>
+      <div 
+        style={topSectionStyle} 
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div style={{ fontWeight: 'bold' }}>{block.label}</div>
         <input
           type="text"
           placeholder="Condition (e.g., x > 0)"
           value={condition}
           onChange={(e) => setCondition(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             width: '100%',
             padding: '4px',
@@ -82,23 +61,14 @@ function ElseBlock({ block, allBlocks }) {
           }}
         />
       </div>
-      <div
-        ref={(node) => {
-          droppableRef(node);
-          nestingRef.current = node;
-        }}
-        style={nestingAreaStyle}
-      >
-        {nestedBlocks.length > 0 ? (
-          nestedBlocks.map((child) => (
-            <BlockFactory key={child.id} block={child} positioning="static" allBlocks={allBlocks} />
-          ))
-        ) : (
-          <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px', textAlign: 'center' }}>
-            Drop blocks here
-          </div>
-        )}
-      </div>
+      
+      <NestableArea 
+        block={block} 
+        allBlocks={allBlocks} 
+        nestedBlocks={nestedBlocks} 
+        blockColor={block.color || '#3498DB'} 
+      />
+      
       <div style={bottomSectionStyle} />
     </div>
   );

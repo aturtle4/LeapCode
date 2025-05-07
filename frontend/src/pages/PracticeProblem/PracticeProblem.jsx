@@ -121,7 +121,33 @@ function PracticeProblem({ darkMode }) {
         const parentId = over.id.replace('nesting-', '');
         const parentBlock = findBlockById(blocksCopy, parentId);
         
+        // Don't allow nesting if parent block doesn't exist or cannot nest
         if (!parentBlock || !parentBlock.canNest) return blocksCopy;
+        
+        // Don't allow self-nesting (a block cannot be nested inside itself)
+        if (parentId === active.id) {
+          console.log("Self-nesting prevented: A block cannot be nested inside itself");
+          return blocksCopy;
+        }
+        
+        // Check if we're trying to nest a parent inside its own child (cyclic nesting)
+        const isParentOfActive = (potentialParent, activeId) => {
+          if (!potentialParent || !potentialParent.nestedBlocks) return false;
+          
+          // Check if any direct nested block is the active block
+          if (potentialParent.nestedBlocks.some(block => block.id === activeId)) {
+            return true;
+          }
+          
+          // Recursively check nested blocks
+          return potentialParent.nestedBlocks.some(block => isParentOfActive(block, activeId));
+        };
+        
+        // If the active block is already a parent of the drop target, prevent the nesting
+        if (!isFromToolkit && isParentOfActive(findBlockById(blocksCopy, active.id), parentId)) {
+          console.log("Cyclic nesting prevented: Cannot nest a parent inside its own child");
+          return blocksCopy;
+        }
         
         // Initialize nestedBlocks if it doesn't exist
         if (!parentBlock.nestedBlocks) {

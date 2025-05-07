@@ -2,14 +2,13 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import SetVarBlock from './SetVarBlock';
 import IfBlock from './IfBlock';
-import ForLoopBlock from './ForLoopBlock';
+import ForBlock from './ForBlock';
 import AddBlock from './AddBlock';
 import DraggableBlock from '../PracticeProblem/DraggableBlock';
 import WhileBlock from './WhileBlock';
 import StartBlock from './StartBlock';
 import EndBlock from './EndBlock';
 import ChangeVariableBlock from './ChangeVariableBlock';
-import ForBlock from './ForBlock';
 import UseVariableBlock from './UseVariableBlock';
 import SubtractBlock from './SubtractBlock';
 import MultiplyBlock from './MultiplyBlock';
@@ -21,7 +20,7 @@ const blockComponents = {
   setVariable: SetVarBlock,
   changeVariable: SetVarBlock,
   if: IfBlock,
-  forLoop: ForLoopBlock,
+  forLoop: ForBlock,
   add: AddBlock,
   whileLoop: WhileBlock,
   start: StartBlock,

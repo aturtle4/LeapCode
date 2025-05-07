@@ -5,20 +5,20 @@ function EndBlock({ block }) {
     const style = {
         padding: '35px 12px',
         backgroundColor: block.color || '#3498DB',
+        opacity: isUnconnected ? 0.6 : 1,
         color: 'white',
         width: '150px',
         borderRadius: '5px 5px 10px 10px',
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
-        opacity: isUnconnected ? 0.6 : 1,
     };
 
-  return (
-    <div style={style}>
-      <div style={{ fontWeight: 'bold' }}>{block.label || 'End'}</div>
-    </div>
-  );
+    return (
+        <div style={style}>
+        <div style={{ fontWeight: 'bold' }}>{block.label || 'Start'}</div>
+        </div>
+    );
 }
 
 export default EndBlock;
