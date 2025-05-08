@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { authAPI } from "../services/api";
 
 // Create context
@@ -10,27 +10,54 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Load user on mount
+  // Function to load user data that can be called from anywhere
+  const loadUser = useCallback(async () => {
+    try {
+      setLoading(true);
+      const isAuth = await authAPI.isAuthenticated();
+      if (isAuth) {
+        const userData = await authAPI.getCurrentUser();
+        console.log("Loaded user data:", userData); // Debug log
+        setUser(userData);
+        return userData;
+      }
+      return null;
+    } catch (err) {
+      console.error("Failed to load user:", err);
+      setError(err.message || "Authentication failed");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load user on mount and when pathname changes to /home
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setLoading(true);
-        const isAuth = await authAPI.isAuthenticated();
-        if (isAuth) {
-          const userData = await authAPI.getCurrentUser();
-          setUser(userData);
+    // Track if the component is mounted
+    let isMounted = true;
+    let lastPathname = location.pathname;
+    
+    const fetchUser = async () => {
+      if (isMounted) {
+        // Always reload user data when navigating to home (after login/signup)
+        if (location.pathname === "/home" && lastPathname !== "/home") {
+          await loadUser();
+        } else if (!user) {
+          // Only load user on initial mount if not already loaded
+          await loadUser();
         }
-      } catch (err) {
-        console.error("Failed to load user:", err);
-        setError(err.message || "Authentication failed");
-      } finally {
-        setLoading(false);
       }
     };
-
-    loadUser();
-  }, []);
+    
+    fetchUser();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname, loadUser]); // Removed user from dependencies
 
   // Login function
   const login = async (email, password) => {
@@ -121,6 +148,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     googleAuth,
     refreshTokens,
+    loadUser, // Expose the loadUser function to components
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

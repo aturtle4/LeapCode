@@ -13,6 +13,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 # Import models so Alembic can detect them
 from app.db.database import Base
 from app.models.user import User
+from app.models.skill_tree import SkillTree
+from app.models.problem import Problem, TestCase, Submission
 
 # This is the Alembic Config object
 config = context.config

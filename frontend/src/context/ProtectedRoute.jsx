@@ -3,8 +3,8 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
 // Component to protect routes that require authentication
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, requireTeacher = false }) => {
+  const { isAuthenticated, loading, user } = useAuth();
 
   // Show loading state while checking authentication
   if (loading) {
@@ -27,7 +27,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Render the protected component if authenticated
+  // Check if the route requires teacher role
+  if (requireTeacher && !user?.is_teacher) {
+    return <Navigate to="/home" replace />;
+  }
+
+  // Render the protected component if authenticated and has correct role
   return children;
 };
 

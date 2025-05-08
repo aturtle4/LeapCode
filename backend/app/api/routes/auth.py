@@ -102,6 +102,7 @@ def create_user(
         last_name=user_in.last_name,
         profile_picture=user_in.profile_picture,
         is_oauth_account=False,
+        is_teacher=user_in.is_teacher,  # Add is_teacher field
     )
     db.add(user)
     db.commit()
@@ -346,6 +347,10 @@ async def google_callback(
 
     # Create redirect URL with tokens
     redirect_url = f"{settings.CORS_ORIGINS[0]}/auth/callback?token={access_token}&refresh_token={refresh_token}"
+    
+    # Add is_new_user flag for new Google users to trigger the teacher selection dialog
+    if is_new_user:
+        redirect_url += "&is_new_user=true"
 
     # Return a redirect response
     return RedirectResponse(url=redirect_url)
@@ -382,4 +387,25 @@ def get_me(request: Request, current_user: User = Depends(get_current_user)) -> 
             # Log error but continue
             print(f"Error caching profile picture in /me endpoint: {str(e)}")
 
+    return current_user
+
+
+@router.post("/update-role", response_model=UserResponse)
+async def update_user_role(
+    user_data: dict, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> Any:
+    """
+    Update user role (teacher/student status)
+    """
+    # Print debug information
+    print(f"update-role API called with data: {user_data}")
+    print(f"Current user before update: {current_user.email}, is_teacher: {current_user.is_teacher}")
+    
+    # Only the user themselves can update their role
+    if user_data.get("is_teacher") is not None:
+        current_user.is_teacher = user_data["is_teacher"]
+        db.commit()
+        db.refresh(current_user)
+        print(f"User role updated, is_teacher is now: {current_user.is_teacher}")
+    
     return current_user

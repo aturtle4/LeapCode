@@ -33,6 +33,13 @@ async def create_skill_tree(
     """
     Create a new skill tree
     """
+    # Only teachers can create skill trees
+    if not current_user.is_teacher:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can create skill trees"
+        )
+        
     # Create a new skill tree with a UUID
     skill_tree = SkillTree(
         id=f"ST{uuid.uuid4().hex[:8].upper()}",  # Generate a custom ID like ST12345678
@@ -78,6 +85,13 @@ async def update_skill_tree(
     """
     Update a skill tree
     """
+    # Only teachers can update skill trees
+    if not current_user.is_teacher:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can update skill trees"
+        )
+        
     skill_tree = db.query(SkillTree).filter(SkillTree.id == skill_tree_id).first()
     if not skill_tree:
         raise HTTPException(
@@ -110,6 +124,13 @@ async def delete_skill_tree(
     """
     Delete a skill tree
     """
+    # Only teachers can delete skill trees
+    if not current_user.is_teacher:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can delete skill trees"
+        )
+        
     skill_tree = db.query(SkillTree).filter(SkillTree.id == skill_tree_id).first()
     if not skill_tree:
         raise HTTPException(

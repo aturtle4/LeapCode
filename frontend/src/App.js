@@ -7,6 +7,7 @@ import AuthCallback from "./pages/Auth/AuthCallback";
 import ClassroomPage from "./pages/Classrooms/Classroom";
 import SkillTree from "./pages/SkillTree/SkillTree";
 import PracticeProblem from "./pages/PracticeProblem/PracticeProblem";
+import ProblemsPage from "./pages/Problem/ProblemsPage";
 import { AuthProvider } from "./context/AuthProvider";
 import ProtectedRoute from "./context/ProtectedRoute";
 
@@ -58,6 +59,11 @@ function App() {
           <Route path="/skillTree/:treeid/PracticeProblem/:problemName/:problemid" element={
             <ProtectedRoute>
               <PracticeProblem darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+            </ProtectedRoute>
+          } />
+          <Route path="/problems" element={
+            <ProtectedRoute requireTeacher={true}>
+              <ProblemsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
             </ProtectedRoute>
           } />
         </Routes>

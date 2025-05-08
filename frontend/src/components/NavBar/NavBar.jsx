@@ -8,12 +8,14 @@ import {
   MenuItem,
   Box,
   Tooltip,
+  Button,
 } from "@mui/material";
 import {
   AccountCircle,
   Brightness4,
   Brightness7,
   Code as CodeIcon,
+  Assignment,
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
@@ -77,8 +79,24 @@ function NavBar({ darkMode, toggleDarkMode }) {
           </Typography>
         </Box>
 
-        {/* Center Section - Title or Welcome Message */}
-        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
+        {/* Center Section - Navigation Links */}
+        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
+          {/* Only show Problems link to teachers */}
+          {user?.is_teacher && (
+            <Button
+              startIcon={<Assignment />}
+              onClick={() => navigate("/problems")}
+              sx={{ 
+                color: darkMode ? "#d7d7d6" : "#555555",
+                "&:hover": {
+                  backgroundColor: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+                }
+              }}
+            >
+              Problems
+            </Button>
+          )}
+          
           <Typography
             variant="h6"
             sx={{
@@ -170,6 +188,25 @@ function NavBar({ darkMode, toggleDarkMode }) {
             >
               Profile
             </MenuItem>
+            {/* Only show Problems menu item to teachers */}
+            {user?.is_teacher && (
+              <MenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate("/problems");
+                }}
+                sx={{
+                  borderRadius: "4px",
+                  margin: "2px 0",
+                  padding: "10px 15px",
+                  "&:hover": {
+                    backgroundColor: darkMode ? "#444444" : "#f5f5f5",
+                  },
+                }}
+              >
+                Manage Problems
+              </MenuItem>
+            )}
             <MenuItem
               sx={{
                 borderRadius: "4px",

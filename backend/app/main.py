@@ -7,7 +7,7 @@ import logging
 import uvicorn
 
 from app.core.config import settings
-from app.api.routes import auth, google_classroom, skill_tree
+from app.api.routes import auth, google_classroom, skill_tree, problem
 from app.db.database import Base, engine
 from app.middleware.rate_limiter import rate_limit_middleware
 
@@ -101,6 +101,11 @@ app.include_router(
     skill_tree.router,
     prefix=f"{settings.API_V1_STR}/skill-trees",
     tags=["skill trees"],
+)
+app.include_router(
+    problem.router,
+    prefix=f"{settings.API_V1_STR}/problems",
+    tags=["problems"],
 )
 
 

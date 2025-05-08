@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogTitle,
@@ -17,9 +18,12 @@ import {
   MenuItem,
   Divider,
   Stack,
+  Autocomplete,
+  Tooltip,
 } from "@mui/material";
-import { Add, Delete, Save } from "@mui/icons-material";
+import { Add, Delete, Save, AddCircleOutline } from "@mui/icons-material";
 import { skillTreeAPI } from "../../services/skillTreeAPI";
+import { problemAPI } from "../../services/problemAPI";
 
 // Node step types
 const STEP_TYPES = [
@@ -40,6 +44,10 @@ const NodeForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const isEditMode = !!editData;
+  const [problems, setProblems] = useState([]);
+  const [problemsLoading, setProblemsLoading] = useState(false);
+  const [newProblemName, setNewProblemName] = useState("");
+  const navigate = useNavigate();
 
   // Form data state with one initial step
   const [formData, setFormData] = useState({
@@ -52,6 +60,25 @@ const NodeForm = ({
       },
     ],
   });
+
+  // Load all problems when component mounts or dialog opens
+  useEffect(() => {
+    if (open) {
+      const fetchProblems = async () => {
+        setProblemsLoading(true);
+        try {
+          const problemsData = await problemAPI.getAllProblems();
+          setProblems(problemsData);
+        } catch (err) {
+          console.error("Error loading problems:", err);
+        } finally {
+          setProblemsLoading(false);
+        }
+      };
+
+      fetchProblems();
+    }
+  }, [open]);
 
   // Reset form when dialog opens or closes, or when editData changes
   React.useEffect(() => {
@@ -373,50 +400,126 @@ const NodeForm = ({
               </Select>
             </FormControl>
 
-            <TextField
-              label={
-                step.type === "text"
-                  ? "Text Content"
-                  : step.type === "video"
-                  ? "Video Embed URL (YouTube/Vimeo)"
-                  : "Problem Name"
-              }
-              value={step.content}
-              onChange={(e) =>
-                handleStepChange(index, "content", e.target.value)
-              }
-              fullWidth
-              required
-              margin="normal"
-              multiline={step.type === "text"}
-              rows={step.type === "text" ? 4 : 1}
-              helperText={
-                step.type === "video"
-                  ? "Example: https://www.youtube.com/embed/VIDEO_ID"
-                  : step.type === "problem"
-                  ? "Enter the name of the practice problem"
-                  : ""
-              }
-              InputProps={{
-                style: { color: darkMode ? "#d7d7d6" : "#403f3f" },
-              }}
-              InputLabelProps={{
-                style: { color: darkMode ? "#b3b3b3" : undefined },
-              }}
-              FormHelperTextProps={{
-                style: { color: darkMode ? "#999" : undefined },
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: darkMode ? "#555" : undefined,
+            {step.type === "problem" ? (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Autocomplete
+                  options={problems}
+                  getOptionLabel={(option) => {
+                    return typeof option === 'string' ? option : option.title
+                  }}
+                  value={step.content}
+                  onChange={(event, newValue) => {
+                    const value = typeof newValue === 'string' ? newValue : newValue?.title || '';
+                    handleStepChange(index, "content", value);
+                  }}
+                  loading={problemsLoading}
+                  sx={{ flexGrow: 1 }}
+                  inputValue={newProblemName}
+                  onInputChange={(event, value) => {
+                    setNewProblemName(value);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Problem"
+                      required
+                      fullWidth
+                      margin="normal"
+                      helperText="Choose an existing problem from the list"
+                      InputProps={{
+                        ...params.InputProps,
+                        style: { color: darkMode ? "#d7d7d6" : "#403f3f" },
+                        endAdornment: (
+                          <>
+                            {problemsLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                      InputLabelProps={{
+                        style: { color: darkMode ? "#b3b3b3" : undefined },
+                      }}
+                      FormHelperTextProps={{
+                        style: { color: darkMode ? "#999" : undefined },
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          "& fieldset": {
+                            borderColor: darkMode ? "#555" : undefined,
+                          },
+                          "&:hover fieldset": {
+                            borderColor: darkMode ? "#777" : undefined,
+                          },
+                        },
+                      }}
+                    />
+                  )}
+                />
+                <Tooltip title="Create New Problem">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{ mt: 2 }}
+                    startIcon={<AddCircleOutline />}
+                    onClick={() => {
+                      if (newProblemName.trim()) {
+                        // Close the current form
+                        onClose();
+                        // Navigate to problems page with query parameter
+                        navigate(`/problems?new=${encodeURIComponent(newProblemName)}`);
+                      } else {
+                        // Just navigate to problems page without query
+                        onClose();
+                        navigate('/problems');
+                      }
+                    }}
+                  >
+                    New
+                  </Button>
+                </Tooltip>
+              </Box>
+            ) : (
+              <TextField
+                label={
+                  step.type === "text"
+                    ? "Text Content"
+                    : "Video Embed URL (YouTube/Vimeo)"
+                }
+                value={step.content}
+                onChange={(e) =>
+                  handleStepChange(index, "content", e.target.value)
+                }
+                fullWidth
+                required
+                margin="normal"
+                multiline={step.type === "text"}
+                rows={step.type === "text" ? 4 : 1}
+                helperText={
+                  step.type === "video"
+                    ? "Example: https://www.youtube.com/embed/VIDEO_ID"
+                    : ""
+                }
+                InputProps={{
+                  style: { color: darkMode ? "#d7d7d6" : "#403f3f" },
+                }}
+                InputLabelProps={{
+                  style: { color: darkMode ? "#b3b3b3" : undefined },
+                }}
+                FormHelperTextProps={{
+                  style: { color: darkMode ? "#999" : undefined },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: darkMode ? "#555" : undefined,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: darkMode ? "#777" : undefined,
+                    },
                   },
-                  "&:hover fieldset": {
-                    borderColor: darkMode ? "#777" : undefined,
-                  },
-                },
-              }}
-            />
+                }}
+              />
+            )}
           </Box>
         ))}
 

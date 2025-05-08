@@ -14,6 +14,8 @@ import {
   Tab,
   Tabs,
   Paper,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import AuthNavBar from "../../components/Auth_NavBar/Auth_NavBar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -40,6 +42,7 @@ function Auth({ darkMode, toggleDarkMode }) {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    isTeacher: false,
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -60,10 +63,10 @@ function Auth({ darkMode, toggleDarkMode }) {
   }, [location, navigate]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, checked, type } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -139,6 +142,7 @@ function Auth({ darkMode, toggleDarkMode }) {
           username: formData.username,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          is_teacher: formData.isTeacher, // Add the teacher flag
         });
         setSuccess("Account created successfully!");
         // Optionally switch to login tab after successful registration
@@ -458,6 +462,34 @@ function Auth({ darkMode, toggleDarkMode }) {
                       }}
                     />
                   </Box>
+
+                  {/* Teacher option checkbox */}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isTeacher"
+                        checked={formData.isTeacher}
+                        onChange={handleInputChange}
+                        sx={{
+                          color: darkMode ? "#82b1ff" : "#2196f3",
+                          '&.Mui-checked': {
+                            color: darkMode ? "#2196f3" : "#1976d2",
+                          },
+                        }}
+                      />
+                    }
+                    label="Sign up as a Teacher"
+                    sx={{ 
+                      mt: 2,
+                      color: darkMode ? "#f5f5f5" : "#403f3f",
+                    }}
+                  />
+                  
+                  {formData.isTeacher && (
+                    <Alert severity="info" sx={{ mt: 1 }}>
+                      You're signing up as a teacher. This will allow you to create and manage problems.
+                    </Alert>
+                  )}
                 </>
               )}
 

@@ -9,6 +9,25 @@ const api = axios.create({
   },
 });
 
+// Utility function for debouncing API calls
+const debounce = (func, wait) => {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    return new Promise((resolve, reject) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        try {
+          const result = func.apply(context, args);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      }, wait);
+    });
+  };
+};
+
 // Flag to track if a token refresh is in progress
 let isRefreshing = false;
 // Queue of failed requests to retry after token refresh
@@ -133,6 +152,9 @@ export const authAPI = {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
       
+      // Clear cached user data on login
+      localStorage.removeItem('user_data');
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { detail: 'Login failed' };
@@ -149,12 +171,16 @@ export const authAPI = {
         username: userData.username,
         first_name: userData.firstName || "",
         last_name: userData.lastName || "",
-        profile_picture: userData.profilePicture || ""
+        profile_picture: userData.profilePicture || "",
+        is_teacher: userData.is_teacher || false
       });
       
       // Store both access and refresh tokens
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
+      
+      // Clear cached user data on register
+      localStorage.removeItem('user_data');
       
       return response.data;
     } catch (error) {
@@ -176,10 +202,31 @@ export const authAPI = {
     }
   },
 
-  // Get current user
+  // Get current user with caching
   getCurrentUser: async () => {
     try {
+      // Check for cached user data to avoid unnecessary API calls
+      const cachedUser = localStorage.getItem('user_data');
+      const cachedTime = localStorage.getItem('user_data_timestamp');
+      
+      // Use cached data if it exists and is less than 5 minutes old
+      if (cachedUser && cachedTime) {
+        const now = new Date().getTime();
+        const cacheAge = now - parseInt(cachedTime, 10);
+        
+        // Cache is valid for 5 minutes (300000 ms)
+        if (cacheAge < 300000) {
+          return JSON.parse(cachedUser);
+        }
+      }
+      
+      // If no valid cache, make the API call
       const response = await api.get('/auth/me');
+      
+      // Cache the response
+      localStorage.setItem('user_data', JSON.stringify(response.data));
+      localStorage.setItem('user_data_timestamp', new Date().getTime().toString());
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { detail: 'Failed to get user info' };
@@ -192,10 +239,33 @@ export const authAPI = {
       const token = localStorage.getItem('access_token');
       if (!token) return false;
       
-      // Validate token by trying to get current user
-      await authAPI.getCurrentUser();
+      // Check for cached user data first
+      const cachedUser = localStorage.getItem('user_data');
+      const cachedTime = localStorage.getItem('user_data_timestamp');
+      
+      if (cachedUser && cachedTime) {
+        const now = new Date().getTime();
+        const cacheAge = now - parseInt(cachedTime, 10);
+        
+        // Cache is valid for 5 minutes (300000 ms)
+        if (cacheAge < 300000) {
+          return true;
+        }
+      }
+      
+      // If no valid cache, validate token by trying to get current user
+      const response = await api.get('/auth/me');
+      
+      // Cache the successful response
+      localStorage.setItem('user_data', JSON.stringify(response.data));
+      localStorage.setItem('user_data_timestamp', new Date().getTime().toString());
+      
       return true;
     } catch (error) {
+      // Clear cached user data if authentication fails
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('user_data_timestamp');
+      
       // Don't immediately remove token - refresh token flow will handle this
       return false;
     }
@@ -203,13 +273,21 @@ export const authAPI = {
 
   // Refresh access token using refresh token
   refreshToken: async () => {
-    return refreshAccessToken();
+    const result = await refreshAccessToken();
+    
+    // Clear cached user data on token refresh to force a fresh fetch
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user_data_timestamp');
+    
+    return result;
   },
 
-  // Logout (remove token)
+  // Logout (remove token and cached data)
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user_data_timestamp');
   }
 };
 

@@ -96,11 +96,7 @@ function SkillTreeHome({ darkMode }) {
     severity: "success",
   });
 
-  // Fetch skill trees on component mount
-  useEffect(() => {
-    fetchSkillTrees();
-  }, []);
-
+  // Function to fetch skill trees - used for initial load and retry
   const fetchSkillTrees = async () => {
     try {
       setLoading(true);
@@ -114,6 +110,39 @@ function SkillTreeHome({ darkMode }) {
       setLoading(false);
     }
   };
+
+  // Fetch skill trees on component mount
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await skillTreeAPI.getAllSkillTrees();
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setSkillTrees(data);
+        }
+      } catch (err) {
+        console.error("Failed to load skill trees:", err);
+        if (isMounted) {
+          setError("Failed to load skill trees. Please try again.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    // Return a proper cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleMenuOpen = (event, skillTreeId) => {
     event.stopPropagation();
